@@ -2,7 +2,7 @@
 Flask==2.3.3
 
 # Data Processing
-pandas==2.1.4
+pandas==2.3
 
 # Web Scraping
 requests==2.31.0
