@@ -1,0 +1,25 @@
+# Web Framework
+Flask==2.3.3
+
+# Data Processing
+pandas==2.1.4
+
+# Web Scraping
+requests==2.31.0
+beautifulsoup4==4.12.2
+
+# Date/Time Handling
+datetime
+
+# Built-in Python Libraries (no installation needed)
+# csv
+# os  
+# re
+# random
+# itertools
+# unittest
+# sys
+
+# Development Dependencies (optional)
+# pytest==7.4.3
+# pytest-mock==3.12.0

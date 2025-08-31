@@ -1,0 +1,578 @@
+/* Football Theme Color Palette */
+:root {
+    --primary-green: #1e7e34;      /* Sân cỏ xanh đậm */
+    --light-green: #28a745;        /* Xanh lá sáng */
+    --accent-green: #20c997;       /* Xanh mint nhẹ nhàng */
+    --dark-gray: #2c3e50;          /* Xám đậm hiện đại */
+    --light-gray: #f8f9fa;         /* Xám nhạt */
+    --white: #ffffff;              /* Trắng tinh khiết */
+    --text-dark: #343a40;          /* Văn bản đậm */
+    --border-light: #dee2e6;       /* Viền nhạt */
+    --success: #28a745;            /* Màu thành công */
+    --hover-green: #155724;        /* Xanh hover đậm */
+    --max-points: #f39c12;         /* Màu highlight điểm cao nhất - vàng gold */
+    --hits-color: #17a2b8;         /* Màu hits - xanh dương football */
+    --hits-bg: rgba(23, 162, 184, 0.1);        /* Background cho hits */
+}
+
+h2 {
+    color: var(--primary-green);
+    font-size: 2rem; /* Use rem for scalability */
+    font-weight: 600;
+    margin: 15px 0; /* Reduce default margin */
+}
+
+/* Specific styling for page title */
+main h2 {
+    margin: 10px 0 15px 0; /* Minimal top margin, small bottom margin */
+}
+
+.menu {
+    display: flex;
+    flex-direction: column; /* Stack items vertically on small screens */
+    align-items: center; /* Center items */
+    margin: auto;
+    width: 100%; /* Full width */
+    margin-top: 20px;
+}
+
+@media (min-width: 600px) {
+    .menu {
+        flex-direction: row; /* Change to row on larger screens */
+        justify-content: space-between; /* Space items evenly */
+        width: 50%; /* Adjust width for larger screens */
+    }
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    align-items: center; /* Center content */
+    background-color: var(--light-gray);
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+header {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--light-green) 100%);
+    color: var(--white);
+    text-align: center;
+    padding: 30px 20px;
+    width: 100%; /* Full width */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grass" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="none"/><path d="M0,4 L4,0" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grass)"/></svg>') repeat;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+header h1 {
+    font-size: 2.5rem; /* Use rem for scalability */
+    margin: 0;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+main {
+    padding: 30px 20px;
+    width: 90%; /* Use percentage for responsiveness */
+    max-width: 1200px; /* Limit max width */
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+footer {
+    background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-green) 100%);
+    color: var(--white);
+    text-align: center;
+    padding: 20px;
+    position: relative; /* Change to relative for better flow */
+    width: 100%; /* Full width */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: auto;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 25px 0; /* Add margin for spacing */
+    font-family: inherit;
+    font-size: 1rem; /* Use rem for scalability */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+th,
+td {
+    padding: 15px 12px; /* Increase padding for touch targets */
+    border: none;
+    text-align: left;
+}
+
+th {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--light-green) 100%);
+    color: var(--white);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+td {
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color 0.2s ease;
+}
+
+tr:nth-child(even) td {
+    background-color: #f8fdf9;
+}
+
+tr:hover td {
+    background-color: rgba(32, 201, 151, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Table Column Width Optimization */
+table {
+    table-layout: fixed; /* Enable fixed table layout for consistent column widths */
+}
+
+th:first-child,
+td:first-child {
+    width: 120px; /* Fixed width for team name column */
+    min-width: 120px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+th:not(:first-child),
+td:not(:first-child) {
+    width: 80px; /* Equal width for all week columns */
+    min-width: 80px;
+    max-width: 80px;
+    text-align: center;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    th:first-child,
+    td:first-child {
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+    }
+    
+    th:not(:first-child),
+    td:not(:first-child) {
+        width: 70px;
+        min-width: 70px;
+        max-width: 70px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 600px) {
+    h2 {
+        font-size: 1.5rem; /* Smaller font size on mobile */
+    }
+
+    table {
+        font-size: 0.9rem; /* Smaller font size for tables on mobile */
+    }
+}
+/* Add this to your existing CSS file */
+.chart-container {
+    width: 100%; /* Full width for mobile */
+    height: 300px; /* Default height */
+}
+
+@media (max-width: 600px) {
+    .chart-container {
+        height: 400px; /* Increase height for better visibility on mobile */
+    }
+}
+
+/* Links and Buttons Styling */
+a {
+    color: var(--primary-green);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+a:hover {
+    color: var(--hover-green);
+    text-decoration: none;
+}
+
+a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background: linear-gradient(90deg, var(--primary-green), var(--accent-green));
+    transition: width 0.3s ease;
+}
+
+a:hover::after {
+    width: 100%;
+}
+
+/* Header links styling */
+header a {
+    color: var(--white);
+    font-weight: 600;
+}
+
+header a:hover {
+    color: var(--accent-green);
+}
+
+header a::after {
+    background: linear-gradient(90deg, var(--white), var(--accent-green));
+}
+
+/* Button-like links */
+.btn-link {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--light-green) 100%);
+    color: var(--white) !important;
+    padding: 12px 24px;
+    border-radius: 6px;
+    display: inline-block;
+    box-shadow: 0 3px 10px rgba(30, 126, 52, 0.3);
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 126, 52, 0.4);
+    color: var(--white) !important;
+}
+
+.btn-link::after {
+    display: none;
+}
+
+/* Table Data Highlighting Classes */
+.max-points {
+    color: var(--max-points) !important;
+    font-weight: bold !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.hits-highlight {
+    color: var(--hits-color) !important;
+    font-weight: bold !important;
+}
+
+/* Cup Page Styles */
+.cup-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.cup-container h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.cup-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.cup-title {
+    font-size: 2.5em;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.cup-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 40px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    table-layout: fixed;
+}
+
+.standings-table th,
+.standings-table td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.standings-table th {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+}
+
+.standings-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Column width specifications for standings table */
+.standings-table th:nth-child(1),
+.standings-table td:nth-child(1) {
+    width: 60px;
+    text-align: center;
+}
+
+.standings-table th:nth-child(2),
+.standings-table td:nth-child(2) {
+    width: 35%;
+}
+
+.standings-table th:nth-child(3),
+.standings-table td:nth-child(3),
+.standings-table th:nth-child(4),
+.standings-table td:nth-child(4),
+.standings-table th:nth-child(5),
+.standings-table td:nth-child(5),
+.standings-table th:nth-child(6),
+.standings-table td:nth-child(6) {
+    width: 80px;
+    text-align: center;
+}
+
+.standings-table th:nth-child(7),
+.standings-table td:nth-child(7),
+.standings-table th:nth-child(8),
+.standings-table td:nth-child(8) {
+    width: 100px;
+    text-align: center;
+}
+
+.position {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.team-name {
+    font-weight: 600;
+}
+
+.points {
+    font-weight: bold;
+    color: #27ae60;
+}
+
+.schedule-section {
+    margin-top: 40px;
+}
+
+.week-block {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.week-header {
+    background: #34495e;
+    color: white;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.matches-container {
+    padding: 15px 30px;
+}
+
+.match {
+    display: grid;
+    grid-template-columns: 2fr auto 2fr;
+    align-items: center;
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.match:last-child {
+    border-bottom: none;
+}
+
+.team-left {
+    font-weight: 600;
+    color: #2c3e50;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.team-right {
+    font-weight: 600;
+    color: #2c3e50;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.match-score {
+    text-align: center;
+    font-weight: normal;
+    font-size: 1em;
+    padding: 8px 12px;
+    border-radius: 6px;
+    min-width: 100px;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+}
+
+.team-win {
+    color: #198754;
+    font-weight: bold;
+}
+
+.team-loss {
+    color: #495057;
+    font-weight: normal;
+}
+
+.team-draw {
+    color: #e67e22;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.win {
+    color: #27ae60;
+}
+
+.draw {
+    color: #f39c12;
+}
+
+.loss {
+    color: #6c757d;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px;
+    color: #7f8c8d;
+}
+
+.error {
+    background: #ffe6e6;
+    color: #d63031;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.current-week {
+    background: #e8f5e8;
+    border-left: 4px solid #27ae60;
+}
+
+.current-week .week-header {
+    background: #27ae60;
+}
+
+/* Mobile responsive for cup matches */
+@media (max-width: 768px) {
+    .week-block {
+        max-width: 100%;
+        margin: 0 0 25px 0;
+    }
+    
+    .matches-container {
+        padding: 15px 15px;
+    }
+    
+    .match {
+        gap: 15px;
+        padding: 10px 5px;
+        max-width: 100%;
+    }
+    
+    .team-left, .team-right {
+        font-size: 0.9em;
+        padding: 0 5px;
+    }
+    
+    .match-score {
+        min-width: 90px;
+        padding: 6px 10px;
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 600px) {
+    .matches-container {
+        padding: 10px;
+    }
+    
+    .match {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        text-align: center;
+        max-width: 100%;
+    }
+    
+    .team-left, .team-right {
+        text-align: center;
+        padding: 0;
+    }
+    
+    .match-score {
+        margin: 5px 0;
+        min-width: 80px;
+    }
+    
+    /* Responsive table for cup standings */
+    .standings-table th:nth-child(2),
+    .standings-table td:nth-child(2) {
+        width: 40%;
+    }
+    
+    .standings-table th:nth-child(1),
+    .standings-table td:nth-child(1) {
+        width: 50px;
+    }
+}

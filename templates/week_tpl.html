@@ -1,0 +1,53 @@
+<main>
+  <h2 style="margin: 10px 0;">
+    <center>Live Weekly Table</center>
+  </h2>
+  <center><button id="toggle-button" onclick="toggleTables()">Loading data from LiveFPL ...</button></center>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <button id="left-arrow" onclick="shiftLeft()">←</button>
+    <table id="data-table" style="display: none;">
+      <thead id="table-header"></thead>
+      <tbody id="data-body"></tbody>
+    </table>
+    <button id="right-arrow" onclick="shiftRight()">→</button>
+  </div>
+</main>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="{{ url_for('static', filename='fe_script.js') }}"></script>
+<script>
+  const leagueId = '{{ league_id }}'; // Replace with actual league ID
+  const apiUrl = `/api/week/${leagueId}`;
+
+  // Fetch data from the API
+  fetch(apiUrl)
+    .then(response => response.json())
+    .then(responseData => {
+      // Handle both old format (direct data array) and new format (object with data + current_week)
+      if (Array.isArray(responseData)) {
+        // Old format - backward compatibility
+        initializeDataTable(responseData, leagueId);
+      } else {
+        // New format with current week info
+        initializeDataTable(responseData.data, leagueId, false, responseData.current_week);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
+      document.getElementById('toggle-button').textContent = 'Error loading data.';
+    });
+
+  // Function to toggle visibility of the tables
+  function toggleTables() {
+    const table = document.getElementById('data-table');
+    const button = document.getElementById('toggle-button');
+
+    // Toggle display styles based on current state
+    if (table.style.display === 'none') {
+      table.style.display = 'table'; // Show main table
+      button.textContent = 'Hide Table'; // Update button text
+    } else {
+      table.style.display = 'none'; // Hide main table
+      button.textContent = 'Show Table'; // Update button text
+    }
+  }
+</script>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cup {{cup_number}} - Fantasy League</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <div class="cup-container">
+        <div class="loading" id="loading">
+            <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading..." style="width: 50px;">
+            <p>Đang tải dữ liệu...</p>
+        </div>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        
+        <div id="cup-content" style="display: none;">
+            <!-- Bảng xếp hạng -->
+            <div class="standings-section">
+                <h2>Bảng Xếp Hạng Cup {{cup_number}}</h2>
+                <table class="standings-table" id="standings-table">
+                    <thead>
+                        <tr>
+                            <th>Hạng</th>
+                            <th>Tên Đội</th>
+                            <th>Trận</th>
+                            <th>Thắng</th>
+                            <th>Hòa</th>
+                            <th>Thua</th>
+                            <th>Điểm Cup</th>
+                            <th>Hiệu Số</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standings-body">
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Lịch đấu và kết quả -->
+            <div class="schedule-section">
+                <h2>Lịch Đấu & Kết Quả</h2>
+                <div id="schedule-container">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script id="cup-data" type="application/json">{"cup_number": {{ cup_number }}}</script>
+    
+    <script>
+        // Global variables
+        let cupNumber = JSON.parse(document.getElementById('cup-data').textContent).cup_number;
+        let cupData = null;
+        
+        // Load cup data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCupData();
+        });
+        
+        async function loadCupData() {
+            try {
+                const response = await fetch(`/api/cup/${cupNumber}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                cupData = data;
+                
+                // Hide loading and show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('cup-content').style.display = 'block';
+                
+                // Render cup data
+                renderStandings(data.standings);
+                renderSchedule(data.schedule, data.cup_info.current_week);
+                
+            } catch (error) {
+                console.error('Error loading cup data:', error);
+                showError('Không thể tải dữ liệu cup. Vui lòng thử lại sau.');
+            }
+        }
+        
+
+        
+        function renderStandings(standings) {
+            const tbody = document.getElementById('standings-body');
+            tbody.innerHTML = '';
+            
+            standings.forEach((team, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="position">${index + 1}</td>
+                    <td class="team-name">${team.team_name}</td>
+                    <td>${team.played}</td>
+                    <td>${team.wins}</td>
+                    <td>${team.draws}</td>
+                    <td>${team.losses}</td>
+                    <td class="points">${team.cup_points}</td>
+                    <td>${team.goal_difference > 0 ? '+' : ''}${team.goal_difference}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function renderSchedule(schedule, currentWeek) {
+            const container = document.getElementById('schedule-container');
+            container.innerHTML = '';
+            
+            // Filter and sort weeks: only show current week and past weeks
+            const allWeeks = Object.keys(schedule).map(w => parseInt(w));
+            const weeksToShow = allWeeks.filter(week => week <= currentWeek);
+            const sortedWeeks = weeksToShow.sort((a, b) => b - a); // Descending order (current week first)
+            
+            sortedWeeks.forEach(week => {
+                const weekData = schedule[week];
+                const weekBlock = document.createElement('div');
+                weekBlock.className = `week-block ${weekData.is_current ? 'current-week' : ''}`;
+                
+                let matchesHtml = '';
+                weekData.matches.forEach(match => {
+                    const matchResult = parseMatchResult(match);
+                    matchesHtml += `
+                        <div class="match">
+                            <div class="team-left ${matchResult.team1Class}">${match.team1}</div>
+                            <div class="match-score">${matchResult.scoreText}</div>
+                            <div class="team-right ${matchResult.team2Class}">${match.team2}</div>
+                        </div>
+                    `;
+                });
+                
+                weekBlock.innerHTML = `
+                    <div class="week-header">
+                        Tuần ${week} ${weekData.is_current ? '(Hiện tại)' : ''}
+                    </div>
+                    <div class="matches-container">
+                        ${matchesHtml}
+                    </div>
+                `;
+                
+                container.appendChild(weekBlock);
+            });
+        }
+        
+        function parseMatchResult(match) {
+            const result = match.result;
+            
+            if (!result || result === 'Chưa đấu') {
+                return {
+                    scoreText: 'vs',
+                    team1Class: '',
+                    team2Class: ''
+                };
+            }
+            
+            // Parse result format: "47-47 (Hòa)" or "50-45 (Thắng team1)" or "45-50 (Thắng team2)"
+            const scoreMatch = result.match(/(\d+)-(\d+)/);
+            if (!scoreMatch) {
+                return {
+                    scoreText: result,
+                    team1Class: '',
+                    team2Class: ''
+                };
+            }
+            
+            const team1Score = parseInt(scoreMatch[1]);
+            const team2Score = parseInt(scoreMatch[2]);
+            
+            // Format score based on match result, not just score comparison
+            let scoreText;
+            if (result.includes('Hòa')) {
+                // Draw - both scores in italic
+                scoreText = `<em>${team1Score} - ${team2Score}</em>`;
+            } else if (result.includes(`Thắng ${match.team1}`)) {
+                // Team1 wins - team1 score bold
+                scoreText = `<strong>${team1Score}</strong> - ${team2Score}`;
+            } else if (result.includes(`Thắng ${match.team2}`)) {
+                // Team2 wins - team2 score bold
+                scoreText = `${team1Score} - <strong>${team2Score}</strong>`;
+            } else {
+                // Fallback to normal text
+                scoreText = `${team1Score} - ${team2Score}`;
+            }
+            
+            let team1Class = '';
+            let team2Class = '';
+            
+            if (result.includes('Hòa')) {
+                team1Class = 'team-draw';
+                team2Class = 'team-draw';
+            } else if (result.includes(`Thắng ${match.team1}`)) {
+                team1Class = 'team-win';
+                team2Class = 'team-loss';
+            } else if (result.includes(`Thắng ${match.team2}`)) {
+                team1Class = 'team-loss';
+                team2Class = 'team-win';
+            }
+            
+            return {
+                scoreText: scoreText,
+                team1Class: team1Class,
+                team2Class: team2Class
+            };
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
