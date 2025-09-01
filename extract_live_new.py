@@ -141,7 +141,7 @@ def find_table_rows(soup):
     
     return rows
 
-def extract_league_data(league_code, use_live_url=True):
+def extract_league_data(league_code):
     """
     Trích xuất dữ liệu từ league FPL theo mã league với cấu trúc HTML mới.
     
@@ -153,34 +153,16 @@ def extract_league_data(league_code, use_live_url=True):
     
     Args:
         league_code (str or int): Mã league (ví dụ: 1798895)
-        use_live_url (bool): Nếu True, thử URL live format trước
     
     Returns:
         pd.DataFrame: DataFrame chứa thông tin các đội trong league
         Columns: rank, team_name, total_points, live_points, hits
     """
-    # Try different URL formats
-    urls_to_try = []
-    if use_live_url:
-        urls_to_try.extend([
-            f"https://plan.livefpl.net/live/{league_code}",
-            f"https://livefpl.net/leagues/{league_code}",
-            f"https://livefpl.net/live/{league_code}"
-        ])
+    # Use the primary livefpl.net URL that works
+    league_url = f"https://livefpl.net/leagues/{league_code}"
+    print(f"Extracting data from: {league_url}")
     
-    urls_to_try.append(f"https://plan.livefpl.net/leagues/{league_code}")
-    
-    for league_url in urls_to_try:
-        print(f"Trying URL: {league_url}")
-        result_df = _extract_from_url(league_url, league_code)
-        if not result_df.empty and result_df['live_points'].sum() > 0:
-            return result_df
-        elif not result_df.empty:
-            # Keep this as fallback
-            fallback_df = result_df
-    
-    # Return fallback if no better option found
-    return fallback_df if 'fallback_df' in locals() else pd.DataFrame(columns=["rank", "team_name", "total_points", "live_points", "hits"])
+    return _extract_from_url(league_url, league_code)
 
 def _extract_from_url(league_url, league_code):
     """Helper function to extract data from a specific URL"""
@@ -189,7 +171,8 @@ def _extract_from_url(league_url, league_code):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
-        response = requests.get(league_url, headers=headers, timeout=30)
+        # Increase timeout for busy server situations
+        response = requests.get(league_url, headers=headers, timeout=60)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, "html.parser")
@@ -301,33 +284,44 @@ def _extract_team_name(text):
     if words[0].isdigit():
         start_idx = 1
     
-    # Look for team name (usually first meaningful word after position)
+    # Look for team name (usually first meaningful word(s) after position)
     for i in range(start_idx, min(start_idx + 4, len(words))):
         if i < len(words):
             word = words[i]
             
-            # Skip numeric values, very short words, and known FPL terms
-            if (not word.isdigit() and 
-                len(word) >= 3 and 
+            # Skip very short words and known FPL terms, but allow alphanumeric team names
+            if (len(word) >= 3 and 
                 word not in skip_patterns and
                 not word.startswith('(') and
                 not word.endswith(')') and
                 ':' not in word):
                 
-                # Check if next word might be part of team name (like "Morningstar FC")
-                if i + 1 < len(words) and words[i + 1] in ['FC', 'United', 'City', 'Town', 'Athletic', 'Rovers']:
-                    return f"{word} {words[i + 1]}"
+                # Check if next word might be part of team name
+                if i + 1 < len(words):
+                    next_word = words[i + 1]
+                    
+                    # Check for repeated word pattern which indicates team name boundary
+                    # Pattern: "Johnny Walker Walker Johnny" - team name is "Johnny Walker"
+                    if (next_word.isalpha() and 
+                        i + 2 < len(words) and 
+                        (words[i + 2] == next_word or words[i + 2] == word)):
+                        # This suggests "word next_word" is the team name
+                        return f"{word} {next_word}"
+                    
+                    # Common team name suffixes
+                    if next_word in ['FC', 'United', 'City', 'Town', 'Athletic', 'Rovers']:
+                        return f"{word} {next_word}"
                 
-                # Check if this looks like a team name (has mix of letters, reasonable length)
-                if word.isalpha() and 3 <= len(word) <= 20:
+                # Single word team name
+                if (word.isalpha() or 
+                    (word.isalnum() and not word.isdigit() and any(c.isalpha() for c in word))):
                     return word
     
     # Fallback: return first substantial word that looks like a name
     for word in words[start_idx:]:
-        if (word.isalpha() and 
-            len(word) >= 4 and 
+        if (len(word) >= 3 and 
             word not in skip_patterns and
-            not word.isupper() or len(word) > 5):  # Allow long uppercase words (team names)
+            (word.isalpha() or (word.isalnum() and not word.isdigit() and any(c.isalpha() for c in word)))):
             return word
     
     return "Unknown Team"
@@ -360,6 +354,7 @@ def _parse_table_format(soup):
             
             # Extract team name using generic pattern detection
             team_name = _extract_team_name(text)
+            # print(f"Extracted team name: '{team_name}'")
             
             # Look for hit pattern first: "X (-Y)=Z"
             hits_match = re.search(r'(\d+)\s*\(-(\d+)\)\s*=\s*(\d+)', text)
@@ -408,14 +403,4 @@ def _parse_table_format(soup):
 if __name__ == "__main__":
     df = extract_league_data("1798895")
     print(df)
-    print("\n" + "="*50)
-    print("Testing with different league (if available):")
-    
-    # Test with a different league ID to show it's generic
-    try:
-        df2 = extract_league_data("123456")  # Different league
-        print(df2)
-    except:
-        print("Different league not available for testing")
-    
     # df.to_csv("league_1798895_live.csv", index=False)
