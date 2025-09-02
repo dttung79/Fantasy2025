@@ -9,41 +9,49 @@
 </head>
 <body>
     <div class="cup-container">
-        <div class="loading" id="loading">
-            <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading..." style="width: 50px;">
-            <p>Đang tải dữ liệu...</p>
+        <div class="loading-state" id="loading">
+            <div class="loading-spinner">
+                <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading..." class="loading-gif">
+            </div>
+            <p class="loading-text">Đang tải dữ liệu...</p>
         </div>
         
-        <div id="error-message" class="error" style="display: none;"></div>
+        <div id="error-message" class="error-message" style="display: none;"></div>
         
-        <div id="cup-content" style="display: none;">
+        <div id="cup-content" class="cup-content" style="display: none;">
             <!-- Bảng xếp hạng -->
-            <div class="standings-section">
-                <h2>Bảng Xếp Hạng Cup {{cup_number}}</h2>
-                <table class="standings-table" id="standings-table">
-                    <thead>
-                        <tr>
-                            <th>Hạng</th>
-                            <th>Tên Đội</th>
-                            <th>Trận</th>
-                            <th>Thắng</th>
-                            <th>Hòa</th>
-                            <th>Thua</th>
-                            <th>Điểm Cup</th>
-                            <th>Hiệu Số</th>
-                        </tr>
-                    </thead>
-                    <tbody id="standings-body">
-                    </tbody>
-                </table>
-            </div>
+            <section class="standings-section">
+                <div class="section-header">
+                    <h2 class="section-title">Bảng Xếp Hạng Cup {{cup_number}}</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="standings-table" id="standings-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">Hạng</th>
+                                <th class="col-team">Tên Đội</th>
+                                <th class="col-stat">Trận</th>
+                                <th class="col-stat">Thắng</th>
+                                <th class="col-stat">Hòa</th>
+                                <th class="col-stat">Thua</th>
+                                <th class="col-points">Điểm Cup</th>
+                                <th class="col-diff">Hiệu Số</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standings-body">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
             
             <!-- Lịch đấu và kết quả -->
-            <div class="schedule-section">
-                <h2>Lịch Đấu & Kết Quả</h2>
-                <div id="schedule-container">
+            <section class="schedule-section">
+                <div class="section-header">
+                    <h2 class="section-title">Lịch Đấu & Kết Quả</h2>
                 </div>
-            </div>
+                <div id="schedule-container" class="schedule-container">
+                </div>
+            </section>
         </div>
     </div>
 
@@ -91,15 +99,18 @@
             
             standings.forEach((team, index) => {
                 const row = document.createElement('tr');
+                row.className = 'standings-row';
                 row.innerHTML = `
-                    <td class="position">${index + 1}</td>
-                    <td class="team-name">${team.team_name}</td>
-                    <td>${team.played}</td>
-                    <td>${team.wins}</td>
-                    <td>${team.draws}</td>
-                    <td>${team.losses}</td>
-                    <td class="points">${team.cup_points}</td>
-                    <td>${team.goal_difference > 0 ? '+' : ''}${team.goal_difference}</td>
+                    <td class="position col-rank">${index + 1}</td>
+                    <td class="team-name col-team">
+                        <span class="team-name-text">${team.team_name}</span>
+                    </td>
+                    <td class="col-stat">${team.played}</td>
+                    <td class="col-stat">${team.wins}</td>
+                    <td class="col-stat">${team.draws}</td>
+                    <td class="col-stat">${team.losses}</td>
+                    <td class="points col-points">${team.cup_points}</td>
+                    <td class="col-diff">${team.goal_difference > 0 ? '+' : ''}${team.goal_difference}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -123,19 +134,28 @@
                 weekData.matches.forEach(match => {
                     const matchResult = parseMatchResult(match);
                     matchesHtml += `
-                        <div class="match">
-                            <div class="team-left ${matchResult.team1Class}">${match.team1}</div>
-                            <div class="match-score">${matchResult.scoreText}</div>
-                            <div class="team-right ${matchResult.team2Class}">${match.team2}</div>
+                        <div class="match-card">
+                            <div class="match-teams">
+                                <div class="team team-left ${matchResult.team1Class}">
+                                    <span class="team-name">${match.team1}</span>
+                                </div>
+                                <div class="match-score-container">
+                                    <div class="match-score">${matchResult.scoreText}</div>
+                                </div>
+                                <div class="team team-right ${matchResult.team2Class}">
+                                    <span class="team-name">${match.team2}</span>
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
                 
                 weekBlock.innerHTML = `
                     <div class="week-header">
-                        Tuần ${week} ${weekData.is_current ? '(Hiện tại)' : ''}
+                        <span class="week-title">Tuần ${week}</span>
+                        ${weekData.is_current ? '<span class="current-badge">(Hiện tại)</span>' : ''}
                     </div>
-                    <div class="matches-container">
+                    <div class="matches-grid">
                         ${matchesHtml}
                     </div>
                 `;

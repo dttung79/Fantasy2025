@@ -1,15 +1,30 @@
-<main>
-  <h2 style="margin: 10px 0;">
-    <center>Live Weekly Table</center>
-  </h2>
-  <center><button id="toggle-button" onclick="toggleTables()">Loading data from LiveFPL ...</button></center>
-  <div style="display: flex; justify-content: space-between; align-items: center;">
-    <button id="left-arrow" onclick="shiftLeft()">←</button>
-    <table id="data-table" style="display: none;">
-      <thead id="table-header"></thead>
-      <tbody id="data-body"></tbody>
-    </table>
-    <button id="right-arrow" onclick="shiftRight()">→</button>
+<main class="weekly-main">
+  <div class="page-header">
+    <h2 class="page-title">Live Weekly Table</h2>
+    <button id="toggle-button" class="toggle-btn" onclick="toggleTables()">
+      <span class="loading-text">Loading data from LiveFPL ...</span>
+    </button>
+  </div>
+  
+  <div class="table-container">
+    <div class="table-controls">
+      <button id="left-arrow" class="nav-arrow nav-arrow-left" onclick="shiftLeft()" aria-label="Previous weeks">
+        <span class="arrow-icon">←</span>
+        <span class="arrow-text">Prev</span>
+      </button>
+      
+      <div class="table-wrapper">
+        <table id="data-table" class="weekly-table">
+          <thead id="table-header"></thead>
+          <tbody id="data-body"></tbody>
+        </table>
+      </div>
+      
+      <button id="right-arrow" class="nav-arrow nav-arrow-right" onclick="shiftRight()" aria-label="Next weeks">
+        <span class="arrow-text">Next</span>
+        <span class="arrow-icon">→</span>
+      </button>
+    </div>
   </div>
 </main>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>

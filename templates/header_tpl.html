@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="UTF-8">
@@ -9,15 +9,24 @@
 </head>
 
 <body>
-    <header>
-        <h1>Fantasy Premier League 2024 - 2025 - League {{ league_id }}</h1>
-        <div class="menu">
-            <a href="/week/{{ league_id }}">Weakly League</a>
-            <span>Cup </span>
-            <a href="/cup/1">1</a> | 
-            <a href="/cup/2">2</a> | 
-            <a href="/cup/3">3</a> | 
-            <a href="/cup/4">4</a> | 
-            <a href="/cup/5">5</a>
+    <header class="main-header">
+        <div class="header-content">
+            <h1 class="header-title">Fantasy Premier League 2024 - 2025</h1>
+            <div class="league-info">League {{ league_id }}</div>
         </div>
+        <nav class="main-nav">
+            <div class="nav-section">
+                <a href="/week/{{ league_id }}" class="nav-link primary">Weekly League</a>
+            </div>
+            <div class="nav-section">
+                <span class="nav-label">Cup:</span>
+                <div class="cup-links">
+                    <a href="/cup/1" class="nav-link cup-link">1</a>
+                    <a href="/cup/2" class="nav-link cup-link">2</a>
+                    <a href="/cup/3" class="nav-link cup-link">3</a>
+                    <a href="/cup/4" class="nav-link cup-link">4</a>
+                    <a href="/cup/5" class="nav-link cup-link">5</a>
+                </div>
+            </div>
+        </nav>
     </header>

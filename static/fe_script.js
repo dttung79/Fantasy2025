@@ -13,9 +13,18 @@ function initializeDataTable(data, leagueId, orderByLatestPoints = false, curren
     // Create table headers dynamically
     const headers = data[0]; // First row contains headers
     const headerRow = document.createElement('tr');
-    headers.forEach(header => {
+    headers.forEach((header, index) => {
         const th = document.createElement('th');
         th.textContent = header; // Set header text
+        
+        // Add responsive classes
+        if (index === 0) {
+            th.className = 'col-team-name';
+        } else {
+            th.className = 'col-week';
+            th.setAttribute('data-week', index);
+        }
+        
         headerRow.appendChild(th);
     });
     tableHeader.appendChild(headerRow); // Append header row to the table
@@ -36,25 +45,39 @@ function initializeDataTable(data, leagueId, orderByLatestPoints = false, curren
     // Process each team row
     data.slice(1).forEach(row => {
         const tr = document.createElement('tr');
+        tr.className = 'team-row';
 
         // Team name
         const teamCell = document.createElement('td');
-        teamCell.textContent = row[0]; // Team name
+        teamCell.className = 'col-team-name team-name-cell';
+        teamCell.innerHTML = `<span class="team-name-text">${row[0]}</span>`;
         tr.appendChild(teamCell);
 
         // Process scores and hits for each week
         row.slice(1).forEach((weekData, index) => {
             const [points, hits] = weekData.split(':'); // Split points and hits
             const weekCell = document.createElement('td');
+            weekCell.className = 'col-week week-cell';
+            weekCell.setAttribute('data-week', index + 1);
 
-            // Format the cell text as "points (hits)" if hits > 0
-            weekCell.textContent = points; // Set cell text to points
+            // Create points container
+            const pointsContainer = document.createElement('div');
+            pointsContainer.className = 'points-container';
+            
+            const pointsSpan = document.createElement('span');
+            pointsSpan.className = 'points-value';
+            pointsSpan.textContent = points;
+            pointsContainer.appendChild(pointsSpan);
+
+            // Add hits if present
             if (parseInt(hits) > 0) {
-                const hitSpan = document.createElement('span'); // Create a span for hits
-                hitSpan.textContent = ` (${hits})`; // Format hits
-                hitSpan.className = 'hits-highlight'; // Use CSS class for styling
-                weekCell.appendChild(hitSpan); // Append hits to the cell
+                const hitSpan = document.createElement('span');
+                hitSpan.className = 'hits-highlight';
+                hitSpan.textContent = ` (${hits})`;
+                pointsContainer.appendChild(hitSpan);
             }
+
+            weekCell.appendChild(pointsContainer);
 
             // Update max points and hits for the week
             maxPoints[index] = Math.max(maxPoints[index], parseInt(points));
@@ -69,15 +92,17 @@ function initializeDataTable(data, leagueId, orderByLatestPoints = false, curren
     });
 
     // Highlight max points and hits for each week using CSS classes
-    const weekCells = tableBody.querySelectorAll('tr');
+    const weekCells = tableBody.querySelectorAll('.team-row');
     weekCells.forEach(row => {
-        row.querySelectorAll('td:not(:first-child)').forEach((cell, index) => {
-            const points = parseInt(cell.textContent.split(' ')[0]); // Get the points part
-            // Only highlight if points > 0 (week has been played) and is max for that week
-            if (points > 0 && points === maxPoints[index]) {
-                cell.classList.add('max-points'); // Use CSS class for max points styling
+        row.querySelectorAll('.week-cell').forEach((cell, index) => {
+            const pointsValue = cell.querySelector('.points-value');
+            if (pointsValue) {
+                const points = parseInt(pointsValue.textContent);
+                // Only highlight if points > 0 (week has been played) and is max for that week
+                if (points > 0 && points === maxPoints[index]) {
+                    pointsValue.classList.add('max-points'); // Use CSS class for max points styling
+                }
             }
-            // The hits are already styled with the 'hits-highlight' class when created
         });
     });
 
