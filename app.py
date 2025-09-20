@@ -3,6 +3,10 @@ from extract_live_new import extract_league_data
 import os
 import pandas as pd
 from datetime import datetime
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+except ImportError:
+    from pytz import timezone as ZoneInfo  # Fallback for older Python
 import csv
 
 app = Flask(__name__, static_url_path='/static')
@@ -92,32 +96,40 @@ def get_cup_data(cup_number):
 
 def get_current_week_info():
     """
-    Read deadlines.txt and determine current week and if deadline has passed.
+    Read deadlines.txt and determine current week and if deadline has passed (compare in GMT+7).
     Returns: (current_week, deadline_passed)
     """
     try:
         with open('deadlines.txt', 'r') as f:
             lines = f.read().strip().split('\n')
-        
         # Get the last line which contains the current/latest week
         last_line = lines[-1].strip()
-        
-        # Parse format: "3: 2025-08-30, 17:00"
+        # Parse format: "3: 2025-08-30, 17:00, GMT+7"
         week_num = int(last_line.split(':')[0])
         deadline_str = last_line.split(':', 1)[1].strip()
-        
-        # Parse deadline string to datetime
-        # Format: "2025-08-30, 17:00"
+        # Remove trailing 'GMT+7' if present
+        if 'GMT+7' in deadline_str:
+            deadline_str = deadline_str.replace('GMT+7', '').strip(', ').strip()
+        # Parse deadline string to datetime (assume always in Asia/Bangkok)
         try:
-            deadline = datetime.strptime(deadline_str, "%Y-%m-%d, %H:%M")
-        except ValueError:
+            deadline_naive = datetime.strptime(deadline_str, "%Y-%m-%d, %H:%M")
+            # Attach Asia/Bangkok timezone
+            try:
+                deadline = deadline_naive.replace(tzinfo=ZoneInfo('Asia/Bangkok'))
+            except Exception:
+                # Fallback for pytz
+                import pytz
+                deadline = pytz.timezone('Asia/Bangkok').localize(deadline_naive)
+        except Exception:
             # If parsing fails, assume deadline has passed
-            deadline = datetime.now()
-        
-        # Check if current time has passed the deadline
-        now = datetime.now()
+            return week_num, True
+        # Get current time in Asia/Bangkok
+        try:
+            now = datetime.now(ZoneInfo('Asia/Bangkok'))
+        except Exception:
+            import pytz
+            now = pytz.timezone('Asia/Bangkok').localize(datetime.now())
         deadline_passed = now >= deadline
-        
         return week_num, deadline_passed
     except Exception as e:
         # If error reading deadlines, assume we're in week 1 and deadline passed

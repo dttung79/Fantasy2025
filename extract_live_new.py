@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 
 # ==== regex helpers ====
-re_hits_pattern = re.compile(r'(\d+)\s*\(-(\d+)\)\s*=\s*-?(\d+)')     # e.g. 0 (-12)=-12
+re_hits_pattern = re.compile(r'(\d+)\s*\(-(\d+)\)\s*=\s*-?\d+(?:\s*\(-\d+\))?')     # e.g. 18 (-24)=-6 (-24)
 re_all_ints = re.compile(r'-?\d+')
 
 def parse_manager_row(manager_div):
@@ -37,11 +37,11 @@ def parse_manager_row(manager_div):
         # print(f"DEBUG: Row text: {row_text}")
         # print(f"DEBUG: All numbers found: {re_all_ints.findall(row_text)}")
         
-        # Look for hits pattern: "X (-Y)=Z"
+        # Look for hits pattern: "X (-Y)=Z" or updated pattern "X (-Y)=Z (-Y)"
         hits_match = re_hits_pattern.search(row_text)
         if hits_match:
-            live_points = int(hits_match.group(3))  # Final points after hits
-            hits = abs(int(hits_match.group(2)))    # Hit penalty (positive)
+            live_points = int(hits_match.group(1))  # GW points before hits  
+            hits = int(hits_match.group(2))         # Hit penalty
             
             # Extract total points from OR section
             # Format: OR rank,total_points (e.g., "OR 1,330,209" means rank=1,330 total=209)
@@ -55,16 +55,11 @@ def parse_manager_row(manager_div):
                 else:
                     total_points = int(or_numbers.replace(',', ''))
             else:
-                # Fallback: find the largest reasonable number
-                all_numbers = [int(x) for x in re_all_ints.findall(row_text)]
-                # Take the last number that's in a reasonable range for total points
-                if all_numbers:
-                    for num in reversed(all_numbers):
-                        if 100 <= num <= 5000:  # Reasonable total points range
-                            total_points = num
-                            break
-                    else:
-                        total_points = max(all_numbers) if all_numbers else 0
+                # Fallback: find the largest reasonable number at the end
+                remaining_text = row_text[hits_match.end():]
+                remaining_numbers = [int(x) for x in re_all_ints.findall(remaining_text)]
+                total_candidates = [n for n in remaining_numbers if 50 <= n <= 5000]
+                total_points = total_candidates[-1] if total_candidates else 0
         else:
             # No hits case - parse the standard format
             # Format: TeamName PlayerName Captain(C). To Play: X VC: ViceCaptain WC BB FH TC OR rank,total_points
@@ -171,8 +166,7 @@ def _extract_from_url(league_url, league_code):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
-        # Increase timeout for busy server situations
-        response = requests.get(league_url, headers=headers, timeout=60)
+        response = requests.get(league_url, headers=headers)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, "html.parser")
@@ -338,26 +332,17 @@ def _parse_table_format(soup):
     # Try to find elements that contain both GW points and Total points
     potential_rows = soup.find_all(['tr', 'div'], class_=lambda x: x and ('row' in str(x).lower() or 'item' in str(x).lower()))
     
-    for element in potential_rows:
+    for i, element in enumerate(potential_rows):
         text = element.get_text(" ", strip=True)
         
-        # Look for patterns like "54" in GW column and "174" in Total column
-        # Also check for hits pattern like "42 (-12)=30"
-        
         # Check if this element contains manager/team data
-        # Look for patterns that indicate this is a team row:
-        # 1. Contains position number at start
-        # 2. Contains points values (GW and Total)
-        # 3. Contains captain info (C) or player names
         if _is_team_row(text):
-            # print(f"Found potential table row: {text}")  # Debug output disabled
-            
             # Extract team name using generic pattern detection
             team_name = _extract_team_name(text)
-            # print(f"Extracted team name: '{team_name}'")
             
-            # Look for hit pattern first: "X (-Y)=Z"
-            hits_match = re.search(r'(\d+)\s*\(-(\d+)\)\s*=\s*(\d+)', text)
+            # Look for hit pattern first: "X (-Y)=Z" or "X (-Y)=Z (-Y)"
+            hits_match = re.search(r'(\d+)\s*\(-(\d+)\)\s*=\s*-?\d+(?:\s*\(-\d+\))?', text)
+            
             if hits_match:
                 live_points = int(hits_match.group(1))  # GW points before hits
                 hits = int(hits_match.group(2))         # Hit penalty
