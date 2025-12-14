@@ -22,7 +22,10 @@
             <!-- Bảng xếp hạng -->
             <section class="standings-section">
                 <div class="section-header">
-                    <h2 class="section-title">Bảng Xếp Hạng Cup {{cup_number}}</h2>
+                    <h2 class="section-title">
+                        Bảng Xếp Hạng Cup {{cup_number}}
+                        <span class="week-range-badge">Tuần {{ (cup_number - 1) * 7 + 1 }}-{{ cup_number * 7 }}</span>
+                    </h2>
                 </div>
                 <div class="table-responsive">
                     <table class="standings-table" id="standings-table">
@@ -76,11 +79,11 @@
                 
                 const data = await response.json();
                 cupData = data;
-                
+
                 // Hide loading and show content
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('cup-content').style.display = 'block';
-                
+
                 // Render cup data
                 renderStandings(data.standings);
                 renderSchedule(data.schedule, data.cup_info.current_week);
@@ -96,10 +99,30 @@
         function renderStandings(standings) {
             const tbody = document.getElementById('standings-body');
             tbody.innerHTML = '';
-            
+
             standings.forEach((team, index) => {
                 const row = document.createElement('tr');
                 row.className = 'standings-row';
+
+                // Add position badges for top 3
+                if (index === 0) {
+                    row.classList.add('position-1');
+                } else if (index === 1) {
+                    row.classList.add('position-2');
+                } else if (index === 2) {
+                    row.classList.add('position-3');
+                }
+
+                // Determine goal difference class
+                let diffClass = 'col-diff';
+                if (team.goal_difference > 0) {
+                    diffClass += ' goal-diff-positive';
+                } else if (team.goal_difference < 0) {
+                    diffClass += ' goal-diff-negative';
+                } else {
+                    diffClass += ' goal-diff-zero';
+                }
+
                 row.innerHTML = `
                     <td class="position col-rank">${index + 1}</td>
                     <td class="team-name col-team">
@@ -110,7 +133,7 @@
                     <td class="col-stat">${team.draws}</td>
                     <td class="col-stat">${team.losses}</td>
                     <td class="points col-points">${team.cup_points}</td>
-                    <td class="col-diff">${team.goal_difference > 0 ? '+' : ''}${team.goal_difference}</td>
+                    <td class="${diffClass}">${team.goal_difference > 0 ? '+' : ''}${team.goal_difference}</td>
                 `;
                 tbody.appendChild(row);
             });

@@ -1,33 +1,29 @@
 <main class="weekly-main">
   <div class="page-header">
-    <h2 class="page-title">Live Weekly Table</h2>
-    <button id="toggle-button" class="toggle-btn" onclick="toggleTables()">
-      <span class="loading-text">Loading data from LiveFPL ...</span>
-    </button>
+    <h2 class="page-title">Bảng Tuần Trực Tiếp</h2>
   </div>
   
   <div class="table-container">
     <div class="table-controls">
-      <button id="left-arrow" class="nav-arrow nav-arrow-left" onclick="shiftLeft()" aria-label="Previous weeks">
+      <button id="left-arrow" class="nav-arrow nav-arrow-left" onclick="shiftLeft()" aria-label="Tuần trước">
         <span class="arrow-icon">←</span>
-        <span class="arrow-text">Prev</span>
+        <span class="arrow-text">Trước</span>
       </button>
-      
+
       <div class="table-wrapper">
         <table id="data-table" class="weekly-table">
           <thead id="table-header"></thead>
           <tbody id="data-body"></tbody>
         </table>
       </div>
-      
-      <button id="right-arrow" class="nav-arrow nav-arrow-right" onclick="shiftRight()" aria-label="Next weeks">
-        <span class="arrow-text">Next</span>
+
+      <button id="right-arrow" class="nav-arrow nav-arrow-right" onclick="shiftRight()" aria-label="Tuần sau">
+        <span class="arrow-text">Sau</span>
         <span class="arrow-icon">→</span>
       </button>
     </div>
   </div>
 </main>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="{{ url_for('static', filename='fe_script.js') }}"></script>
 <script>
   const leagueId = '{{ league_id }}'; // Replace with actual league ID
@@ -48,21 +44,10 @@
     })
     .catch(error => {
       console.error('Error fetching data:', error);
-      document.getElementById('toggle-button').textContent = 'Error loading data.';
+      const header = document.querySelector('.page-header');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.textContent = 'Lỗi tải dữ liệu. Vui lòng thử lại sau.';
+      header.appendChild(errorDiv);
     });
-
-  // Function to toggle visibility of the tables
-  function toggleTables() {
-    const table = document.getElementById('data-table');
-    const button = document.getElementById('toggle-button');
-
-    // Toggle display styles based on current state
-    if (table.style.display === 'none') {
-      table.style.display = 'table'; // Show main table
-      button.textContent = 'Hide Table'; // Update button text
-    } else {
-      table.style.display = 'none'; // Hide main table
-      button.textContent = 'Show Table'; // Update button text
-    }
-  }
 </script>

@@ -1,18 +1,61 @@
-/* Football Theme Color Palette */
+/* Championship Theme - Inspired by Football Tournament Design */
 :root {
-    --primary-green: #1e7e34;      /* Sân cỏ xanh đậm */
-    --light-green: #28a745;        /* Xanh lá sáng */
-    --accent-green: #20c997;       /* Xanh mint nhẹ nhàng */
-    --dark-gray: #2c3e50;          /* Xám đậm hiện đại */
-    --light-gray: #f8f9fa;         /* Xám nhạt */
-    --white: #ffffff;              /* Trắng tinh khiết */
-    --text-dark: #343a40;          /* Văn bản đậm */
-    --border-light: #dee2e6;       /* Viền nhạt */
-    --success: #28a745;            /* Màu thành công */
-    --hover-green: #155724;        /* Xanh hover đậm */
-    --max-points: #f39c12;         /* Màu highlight điểm cao nhất - vàng gold */
-    --hits-color: #17a2b8;         /* Màu hits - xanh dương football */
-    --hits-bg: rgba(23, 162, 184, 0.1);        /* Background cho hits */
+    /* Primary - Championship Maroon/Burgundy */
+    --deep-maroon: #6B1E3E;        /* Chủ đạo đỏ mận đậm */
+    --burgundy: #8B2E4E;           /* Đỏ burgundy sáng hơn */
+    --dark-wine: #4A1428;          /* Đỏ rượu vang đậm */
+    --maroon-light: #9B3E5E;       /* Maroon nhạt cho hover */
+
+    /* Secondary - Navy Blue */
+    --navy-blue: #1A2F5A;          /* Xanh navy chủ đạo */
+    --navy-light: #2A4270;         /* Navy sáng hơn */
+    --navy-dark: #0F1F3F;          /* Navy đậm */
+    --navy-accent: #3A5280;        /* Navy accent */
+
+    /* Neutrals - Cream/Beige */
+    --cream: #F5E6D3;              /* Kem sáng */
+    --beige: #E8D5B7;              /* Be vàng */
+    --sand: #D4C5A9;               /* Cát vàng */
+    --white: #FFFFFF;              /* Trắng */
+    --text-dark: #2C1810;          /* Chữ nâu đậm */
+    --border-light: #D4C5A9;       /* Viền be */
+
+    /* Accents - Gold */
+    --gold: #FFD700;               /* Vàng gold */
+    --gold-dark: #DAA520;          /* Vàng đậm */
+    --gold-light: #FFE44D;         /* Vàng sáng */
+
+    /* Data Visualization */
+    --sky-blue: #42A5F5;           /* Xanh dương cho hits */
+    --violet: #9C6ADE;             /* Tím */
+    --amber: #FFA726;              /* Cam */
+
+    /* Semantic Status */
+    --success: #4CAF50;            /* Thắng - xanh lá */
+    --warning: #FFA726;            /* Hòa - cam */
+    --neutral: #90A4AE;            /* Thua - xám xanh */
+    --danger: #EF5350;             /* Lỗi - đỏ */
+    --info: #42A5F5;               /* Thông tin - xanh */
+
+    /* Interactive States */
+    --hover-maroon: var(--maroon-light);
+    --hover-navy: var(--navy-accent);
+    --focus-ring: var(--gold);
+
+    /* Legacy aliases for compatibility */
+    --primary-green: var(--deep-maroon);
+    --light-green: var(--burgundy);
+    --dark-gray: var(--navy-dark);
+    --light-gray: var(--cream);
+    --cloud: var(--cream);
+    --midnight: var(--navy-dark);
+    --slate: var(--navy-blue);
+    --pitch-green: var(--deep-maroon);
+    --forest-green: var(--dark-wine);
+    --emerald: var(--burgundy);
+    --max-points: var(--gold);
+    --hits-color: var(--sky-blue);
+    --hits-bg: rgba(66, 165, 245, 0.1);
 }
 
 h2 {
@@ -51,8 +94,9 @@ body {
     display: flex;
     flex-direction: column; /* Stack elements vertically */
     align-items: center; /* Center content */
-    background-color: var(--light-gray);
-    color: var(--text-dark);
+    background: linear-gradient(135deg, var(--dark-wine) 0%, var(--deep-maroon) 50%, var(--navy-dark) 100%);
+    background-attachment: fixed;
+    color: var(--cream);
     line-height: 1.6;
 }
 
@@ -91,10 +135,12 @@ main {
     padding: 30px 20px;
     width: 90%; /* Use percentage for responsiveness */
     max-width: 1200px; /* Limit max width */
-    background-color: var(--white);
+    background: linear-gradient(180deg, rgba(74, 20, 40, 0.7) 0%, rgba(26, 47, 90, 0.7) 100%);
+    backdrop-filter: blur(10px);
     border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     margin: 20px 0;
+    border: 1px solid rgba(212, 197, 169, 0.2);
 }
 
 footer {
@@ -127,13 +173,14 @@ td {
 }
 
 th {
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--light-green) 100%);
-    color: var(--white);
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    color: var(--cream);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 0.9rem;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    border-bottom: 2px solid var(--gold);
 }
 
 td {
@@ -142,12 +189,19 @@ td {
 }
 
 tr:nth-child(even) td {
-    background-color: #f8fdf9;
+    background-color: var(--navy-blue);
+    color: var(--cream);
+}
+
+tr:nth-child(odd) td {
+    background-color: var(--navy-light);
+    color: var(--cream);
 }
 
 tr:hover td {
-    background-color: rgba(32, 201, 151, 0.1);
+    background-color: var(--navy-accent) !important;
     transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
 }
 
 /* Table Column Width Optimization */
@@ -270,6 +324,26 @@ td:not(:first-child) {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+.nav-link.active {
+    background: var(--gold);
+    border-color: var(--gold-dark);
+    color: var(--text-dark);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nav-link.active:hover {
+    background: var(--gold-dark);
+    transform: translateY(0);
+}
+
+.week-range-small {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    font-weight: 400;
+    display: inline-block;
+}
+
 .cup-link {
     min-width: 36px;
     padding: 0.4rem 0.8rem;
@@ -293,10 +367,11 @@ td:not(:first-child) {
 }
 
 .page-title {
-    color: var(--primary-green);
+    color: var(--cream);
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
     margin: 0 0 1rem 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .toggle-btn {
@@ -392,8 +467,14 @@ td:not(:first-child) {
     max-width: 120px;
     position: sticky;
     left: 0;
-    background: inherit;
     z-index: 2;
+}
+
+/* Team header should match week headers */
+th.col-team-name {
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    color: var(--cream);
+    border-bottom: 2px solid var(--gold);
 }
 
 .col-week {
@@ -404,8 +485,10 @@ td:not(:first-child) {
 }
 
 .team-name-cell {
-    background: var(--white);
-    border-right: 2px solid var(--border-light);
+    background: var(--beige) !important;
+    border-right: 2px solid var(--gold);
+    color: var(--text-dark) !important;
+    font-weight: 600;
 }
 
 .team-name-text {
@@ -440,20 +523,37 @@ td:not(:first-child) {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Max points in current week column - gold stands out on cream background */
+.current-week-column .points-value.max-points {
+    color: var(--gold-dark);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
 .hits-highlight {
     color: var(--hits-color);
     font-weight: bold;
     font-size: 0.75rem;
 }
 
-.team-row:nth-child(even) .team-name-cell,
 .team-row:nth-child(even) .week-cell {
-    background-color: #f8fdf9;
+    background-color: var(--navy-blue) !important;
+    color: var(--cream);
 }
 
-.team-row:hover .team-name-cell,
+.team-row:nth-child(odd) .week-cell {
+    background-color: var(--navy-light) !important;
+    color: var(--cream);
+}
+
+.team-row:hover .team-name-cell {
+    background-color: var(--sand) !important;
+}
+
 .team-row:hover .week-cell {
-    background-color: rgba(32, 201, 151, 0.1);
+    background-color: var(--navy-accent) !important;
+    box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.1);
 }
 
 /* Mobile responsive adjustments */
@@ -748,7 +848,7 @@ header a::after {
 .loading-state {
     text-align: center;
     padding: 3rem 1rem;
-    color: #7f8c8d;
+    color: var(--cream);
 }
 
 .loading-spinner {
@@ -758,20 +858,25 @@ header a::after {
 .loading-gif {
     width: 40px;
     height: 40px;
+    filter: brightness(1.2);
 }
 
 .loading-text {
     font-size: 1rem;
     margin: 0;
+    color: var(--cream);
+    font-weight: 500;
 }
 
 .error-message {
-    background: #ffe6e6;
-    color: #d63031;
+    background: linear-gradient(135deg, var(--danger) 0%, #c62828 100%);
+    color: var(--white);
     padding: 1rem;
     border-radius: 8px;
     margin: 1rem 0;
     text-align: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    font-weight: 600;
 }
 
 /* Section Styles */
@@ -785,11 +890,29 @@ header a::after {
 }
 
 .section-title {
-    color: var(--primary-green);
+    color: var(--cream);
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
     text-align: center;
     margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 0;
+    border-bottom: 3px solid var(--gold);
+    display: inline-block;
+    width: 100%;
+}
+
+.week-range-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--text-dark);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* Responsive Tables */
@@ -827,12 +950,19 @@ header a::after {
 }
 
 .standings-row:nth-child(even) {
-    background-color: #f8fdf9;
+    background-color: var(--navy-blue);
+    color: var(--cream);
+}
+
+.standings-row:nth-child(odd) {
+    background-color: var(--navy-light);
+    color: var(--cream);
 }
 
 .standings-row:hover {
-    background-color: rgba(32, 201, 151, 0.1);
-    transform: translateY(-1px);
+    background-color: var(--navy-accent) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
 }
 
 /* Mobile-first column specifications */
@@ -888,22 +1018,24 @@ header a::after {
 }
 
 .week-block {
-    background: white;
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-blue) 100%);
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     overflow: hidden;
     margin-bottom: 0;
+    border: 1px solid rgba(212, 197, 169, 0.2);
 }
 
 .week-header {
-    background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-green) 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    color: var(--cream);
     padding: 1rem;
     font-size: 1.1rem;
     font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-bottom: 2px solid var(--gold);
 }
 
 .week-title {
@@ -911,11 +1043,13 @@ header a::after {
 }
 
 .current-badge {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.3rem 0.6rem;
+    background: var(--gold);
+    color: var(--text-dark);
+    padding: 0.3rem 0.8rem;
     border-radius: 15px;
     font-size: 0.8rem;
-    font-weight: 500;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .matches-grid {
@@ -926,15 +1060,16 @@ header a::after {
 }
 
 .match-card {
-    background: #f8fdf9;
+    background: linear-gradient(135deg, var(--navy-light) 0%, var(--navy-blue) 100%);
     border-radius: 8px;
-    border: 1px solid var(--border-light);
+    border: 1px solid rgba(212, 197, 169, 0.15);
     transition: all 0.3s ease;
 }
 
 .match-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+    border-color: var(--gold);
 }
 
 .match-teams {
@@ -949,7 +1084,7 @@ header a::after {
     display: flex;
     align-items: center;
     font-weight: 600;
-    color: var(--text-dark);
+    color: var(--cream);
 }
 
 .team-left {
@@ -976,43 +1111,46 @@ header a::after {
 }
 
 .match-score {
-    background: var(--white);
-    border: 2px solid var(--border-light);
+    background: var(--beige);
+    border: 2px solid var(--gold);
     border-radius: 8px;
     padding: 0.5rem 0.75rem;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.9rem;
     min-width: 80px;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    color: var(--text-dark);
 }
 
 .team-win {
-    color: #198754;
+    color: var(--success);
     font-weight: bold;
 }
 
 .team-loss {
-    color: #495057;
+    color: var(--sand);
     font-weight: normal;
+    opacity: 0.85;
 }
 
 .team-draw {
-    color: #e67e22;
+    color: var(--warning);
     font-style: italic;
     font-weight: 500;
 }
 
 .win {
-    color: #27ae60;
+    color: var(--success);
 }
 
 .draw {
-    color: #f39c12;
+    color: var(--warning);
 }
 
 .loss {
-    color: #6c757d;
+    color: var(--sand);
+    opacity: 0.85;
 }
 
 .loading {
@@ -1030,12 +1168,83 @@ header a::after {
 }
 
 .current-week {
-    background: #e8f5e8;
-    border-left: 4px solid #27ae60;
+    background: linear-gradient(135deg, var(--dark-wine) 0%, var(--deep-maroon) 100%);
+    border-left: 4px solid var(--gold);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
 .current-week .week-header {
-    background: #27ae60;
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    border-bottom-color: var(--gold);
+}
+
+/* ============ SPRINT 1 ENHANCEMENTS ============ */
+
+/* Current Week Indicator for Weekly Table */
+th.current-week-column,
+td.current-week-column {
+    background: var(--cream) !important;
+    border-left: 3px solid var(--gold) !important;
+    border-right: 3px solid var(--gold) !important;
+    position: relative;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+
+/* Goal Difference Color Coding */
+.goal-diff-positive {
+    color: var(--success) !important;
+    font-weight: 600;
+}
+
+.goal-diff-negative {
+    color: var(--danger) !important;
+    font-weight: 600;
+}
+
+.goal-diff-zero {
+    color: var(--neutral);
+    font-weight: 400;
+}
+
+/* Top 3 Position Badges */
+.position-1 .position {
+    color: var(--gold) !important;
+    font-weight: 700 !important;
+    font-size: 1.1em;
+}
+
+.position-1 .position::before {
+    content: '🥇 ';
+}
+
+.position-2 .position {
+    color: #94a3b8 !important;
+    font-weight: 700 !important;
+    font-size: 1.05em;
+}
+
+.position-2 .position::before {
+    content: '🥈 ';
+}
+
+.position-3 .position {
+    color: var(--amber) !important;
+    font-weight: 700 !important;
+    font-size: 1.05em;
+}
+
+.position-3 .position::before {
+    content: '🥉 ';
+}
+
+/* Enhanced hover for top 3 */
+.position-1:hover,
+.position-2:hover,
+.position-3:hover {
+    background-color: rgba(245, 158, 11, 0.05) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* ============ RESPONSIVE BREAKPOINTS ============ */

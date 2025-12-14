@@ -3,8 +3,10 @@ let currentStartWeek = 0; // Biến để theo dõi tuần bắt đầu hiện t
 function initializeDataTable(data, leagueId, orderByLatestPoints = false, currentWeek = null) {
     const tableHeader = document.getElementById('table-header');
     const tableBody = document.getElementById('data-body');
-    const loadingButton = document.getElementById('toggle-button');
-    loadingButton.style.display = 'none'; // Hide loading message
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none'; // Hide loading message
+    }
 
     // Clear existing table content
     tableHeader.innerHTML = '';
@@ -16,15 +18,20 @@ function initializeDataTable(data, leagueId, orderByLatestPoints = false, curren
     headers.forEach((header, index) => {
         const th = document.createElement('th');
         th.textContent = header; // Set header text
-        
+
         // Add responsive classes
         if (index === 0) {
             th.className = 'col-team-name';
         } else {
             th.className = 'col-week';
             th.setAttribute('data-week', index);
+
+            // Add current week indicator
+            if (currentWeek && index === currentWeek) {
+                th.classList.add('current-week-column');
+            }
         }
-        
+
         headerRow.appendChild(th);
     });
     tableHeader.appendChild(headerRow); // Append header row to the table
@@ -59,6 +66,11 @@ function initializeDataTable(data, leagueId, orderByLatestPoints = false, curren
             const weekCell = document.createElement('td');
             weekCell.className = 'col-week week-cell';
             weekCell.setAttribute('data-week', index + 1);
+
+            // Add current week indicator to data cells
+            if (currentWeek && (index + 1) === currentWeek) {
+                weekCell.classList.add('current-week-column');
+            }
 
             // Create points container
             const pointsContainer = document.createElement('div');
@@ -107,8 +119,6 @@ function initializeDataTable(data, leagueId, orderByLatestPoints = false, curren
     });
 
     document.getElementById('data-table').style.display = 'table'; // Show the table
-    if (orderByLatestPoints)
-        drawLineChart(data); // Add this line to draw the chart
 
     // Hiển thị các cột ưu tiên tuần hiện tại
     const totalWeeks = headers.length - 1; // Trừ cột đầu tiên (Team)

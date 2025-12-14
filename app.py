@@ -40,13 +40,14 @@ def get_weeks_data(league_id):
             # Just return historical data from weeks.csv
             data = get_historical_data()
         
-        # Return data with current week information
+        # Return data with current week information and timestamp
         response = {
             "data": data,
             "current_week": current_week,
-            "deadline_passed": deadline_passed
+            "deadline_passed": deadline_passed,
+            "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
         }
-        
+
         return jsonify(response)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -86,9 +87,10 @@ def get_cup_data(cup_number):
         response = {
             "cup_info": cup_info,
             "standings": standings,
-            "schedule": schedule
+            "schedule": schedule,
+            "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
         }
-        
+
         return jsonify(response)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -214,13 +216,13 @@ def get_live_and_historical_data(league_id, current_week):
         return historical_data
 
 def build_league_page(filename, league_id):
-    head = render_template('header_tpl.html', league_id=league_id)
+    head = render_template('header_tpl.html', league_id=league_id, current_page='week')
     content = render_template(filename, league_id=league_id)
     footer = render_template('footer_tpl.html')
     return head + '\n' + content + '\n' + footer
 
 def build_cup_page(filename, cup_number):
-    head = render_template('header_tpl.html', league_id=1798895)
+    head = render_template('header_tpl.html', league_id=1798895, current_page='cup', cup_number=cup_number)
     content = render_template(filename, cup_number=cup_number)
     footer = render_template('footer_tpl.html')
     return head + '\n' + content + '\n' + footer

@@ -12,20 +12,30 @@
     <header class="main-header">
         <div class="header-content">
             <h1 class="header-title">Fantasy Premier League 2024 - 2025</h1>
-            <div class="league-info">League {{ league_id }}</div>
+            <div class="league-info">Giải {{ league_id }}</div>
         </div>
         <nav class="main-nav">
             <div class="nav-section">
-                <a href="/week/{{ league_id }}" class="nav-link primary">Weekly League</a>
+                <a href="/week/{{ league_id }}" class="nav-link primary {% if current_page == 'week' %}active{% endif %}">Giải Tuần</a>
             </div>
             <div class="nav-section">
-                <span class="nav-label">Cup:</span>
+                <span class="nav-label">Cúp:</span>
                 <div class="cup-links">
-                    <a href="/cup/1" class="nav-link cup-link">1</a>
-                    <a href="/cup/2" class="nav-link cup-link">2</a>
-                    <a href="/cup/3" class="nav-link cup-link">3</a>
-                    <a href="/cup/4" class="nav-link cup-link">4</a>
-                    <a href="/cup/5" class="nav-link cup-link">5</a>
+                    <a href="/cup/1" class="nav-link cup-link {% if current_page == 'cup' and cup_number == 1 %}active{% endif %}">
+                        1 <span class="week-range-small">(1-7)</span>
+                    </a>
+                    <a href="/cup/2" class="nav-link cup-link {% if current_page == 'cup' and cup_number == 2 %}active{% endif %}">
+                        2 <span class="week-range-small">(8-14)</span>
+                    </a>
+                    <a href="/cup/3" class="nav-link cup-link {% if current_page == 'cup' and cup_number == 3 %}active{% endif %}">
+                        3 <span class="week-range-small">(15-21)</span>
+                    </a>
+                    <a href="/cup/4" class="nav-link cup-link {% if current_page == 'cup' and cup_number == 4 %}active{% endif %}">
+                        4 <span class="week-range-small">(22-28)</span>
+                    </a>
+                    <a href="/cup/5" class="nav-link cup-link {% if current_page == 'cup' and cup_number == 5 %}active{% endif %}">
+                        5 <span class="week-range-small">(29-35)</span>
+                    </a>
                 </div>
             </div>
         </nav>
