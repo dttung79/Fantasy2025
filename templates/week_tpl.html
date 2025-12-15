@@ -1,9 +1,74 @@
 <main class="weekly-main">
   <div class="page-header">
     <h2 class="page-title">Bảng Tuần Trực Tiếp</h2>
+    <button id="refresh-button" class="refresh-btn" onclick="refreshData()" aria-label="Làm mới dữ liệu">
+      <span class="refresh-icon">🔄</span>
+      <span class="refresh-text">Làm mới</span>
+    </button>
   </div>
-  
-  <div class="table-container">
+  <div id="toast-notification" class="toast-notification"></div>
+
+  <div class="loading-state" id="loading" style="display: block;">
+    <div class="skeleton skeleton-header"></div>
+    <table class="skeleton-table">
+      <thead>
+        <tr>
+          <th style="width: 15%;">Đội</th>
+          <th style="width: 8%;">1</th>
+          <th style="width: 8%;">2</th>
+          <th style="width: 8%;">3</th>
+          <th style="width: 8%;">4</th>
+          <th style="width: 8%;">5</th>
+          <th style="width: 8%;">6</th>
+          <th style="width: 8%;">7</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="skeleton-row">
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-container" id="table-content" style="display: none;">
     <div class="table-controls">
       <button id="left-arrow" class="nav-arrow nav-arrow-left" onclick="shiftLeft()" aria-label="Tuần trước">
         <span class="arrow-icon">←</span>
@@ -26,28 +91,82 @@
 </main>
 <script src="{{ url_for('static', filename='fe_script.js') }}"></script>
 <script>
-  const leagueId = '{{ league_id }}'; // Replace with actual league ID
+  const leagueId = '{{ league_id }}';
   const apiUrl = `/api/week/${leagueId}`;
 
-  // Fetch data from the API
-  fetch(apiUrl)
-    .then(response => response.json())
-    .then(responseData => {
-      // Handle both old format (direct data array) and new format (object with data + current_week)
-      if (Array.isArray(responseData)) {
-        // Old format - backward compatibility
-        initializeDataTable(responseData, leagueId);
-      } else {
-        // New format with current week info
-        initializeDataTable(responseData.data, leagueId, false, responseData.current_week);
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching data:', error);
-      const header = document.querySelector('.page-header');
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error-message';
-      errorDiv.textContent = 'Lỗi tải dữ liệu. Vui lòng thử lại sau.';
-      header.appendChild(errorDiv);
-    });
+  // Load initial data
+  loadWeekData();
+
+  function loadWeekData() {
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(responseData => {
+        // Hide loading and show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('table-content').style.display = 'block';
+
+        // Handle both old format (direct data array) and new format (object with data + current_week)
+        if (Array.isArray(responseData)) {
+          // Old format - backward compatibility
+          initializeDataTable(responseData, leagueId);
+        } else {
+          // New format with current week info
+          initializeDataTable(responseData.data, leagueId, false, responseData.current_week);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        document.getElementById('loading').style.display = 'none';
+        const header = document.querySelector('.page-header');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = 'Lỗi tải dữ liệu. Vui lòng thử lại sau.';
+        header.appendChild(errorDiv);
+      });
+  }
+
+  function refreshData() {
+    const refreshBtn = document.getElementById('refresh-button');
+    const refreshIcon = refreshBtn.querySelector('.refresh-icon');
+
+    // Disable button and show loading state
+    refreshBtn.disabled = true;
+    refreshIcon.classList.add('spinning');
+
+    fetch(apiUrl)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(responseData => {
+        // Update table with new data
+        if (Array.isArray(responseData)) {
+          initializeDataTable(responseData, leagueId);
+        } else {
+          initializeDataTable(responseData.data, leagueId, false, responseData.current_week);
+        }
+
+        // Show success toast
+        showToast('Đã cập nhật dữ liệu', 'success');
+      })
+      .catch(error => {
+        console.error('Error refreshing data:', error);
+        showToast('Lỗi khi làm mới dữ liệu', 'error');
+      })
+      .finally(() => {
+        // Re-enable button and stop spinning
+        refreshBtn.disabled = false;
+        refreshIcon.classList.remove('spinning');
+      });
+  }
+
+  function showToast(message, type) {
+    const toast = document.getElementById('toast-notification');
+    toast.textContent = message;
+    toast.className = `toast-notification toast-${type} toast-show`;
+
+    setTimeout(() => {
+      toast.classList.remove('toast-show');
+    }, 3000);
+  }
 </script>

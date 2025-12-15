@@ -1,19 +1,64 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cup {{cup_number}} - Fantasy League</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
-</head>
-<body>
     <div class="cup-container">
         <div class="loading-state" id="loading">
-            <div class="loading-spinner">
-                <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading..." class="loading-gif">
-            </div>
-            <p class="loading-text">Đang tải dữ liệu...</p>
+            <div class="skeleton skeleton-header"></div>
+            <table class="skeleton-table">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">Hạng</th>
+                        <th style="width: 30%;">Tên Đội</th>
+                        <th style="width: 10%;">Trận</th>
+                        <th style="width: 10%;">Thắng</th>
+                        <th style="width: 10%;">Hòa</th>
+                        <th style="width: 10%;">Thua</th>
+                        <th style="width: 10%;">Điểm</th>
+                        <th style="width: 10%;">Hiệu Số</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="skeleton-row">
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                        <td><div class="skeleton skeleton-cell"></div></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
         </div>
         
         <div id="error-message" class="error-message" style="display: none;"></div>
@@ -26,7 +71,12 @@
                         Bảng Xếp Hạng Cup {{cup_number}}
                         <span class="week-range-badge">Tuần {{ (cup_number - 1) * 7 + 1 }}-{{ cup_number * 7 }}</span>
                     </h2>
+                    <button id="refresh-button" class="refresh-btn" onclick="refreshCupData()" aria-label="Làm mới dữ liệu" style="display: none;">
+                        <span class="refresh-icon">🔄</span>
+                        <span class="refresh-text">Làm mới</span>
+                    </button>
                 </div>
+                <div id="toast-notification" class="toast-notification"></div>
                 <div class="table-responsive">
                     <table class="standings-table" id="standings-table">
                         <thead>
@@ -37,7 +87,10 @@
                                 <th class="col-stat">Thắng</th>
                                 <th class="col-stat">Hòa</th>
                                 <th class="col-stat">Thua</th>
-                                <th class="col-points">Điểm Cup</th>
+                                <th class="col-points">
+                                    Điểm Cup
+                                    <span class="info-tooltip" title="Xếp hạng khi hòa điểm:&#10;1) Đối đầu trực tiếp&#10;2) Điểm đối đầu&#10;3) Ít hit hơn&#10;4) Hiệu số">ℹ️</span>
+                                </th>
                                 <th class="col-diff">Hiệu Số</th>
                             </tr>
                         </thead>
@@ -83,6 +136,13 @@
                 // Hide loading and show content
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('cup-content').style.display = 'block';
+
+                // Show refresh button only for current cup
+                const currentWeek = data.cup_info.current_week;
+                const currentCup = Math.ceil(currentWeek / 7);
+                if (cupNumber === currentCup) {
+                    document.getElementById('refresh-button').style.display = 'flex';
+                }
 
                 // Render cup data
                 renderStandings(data.standings);
@@ -253,6 +313,48 @@
             document.getElementById('error-message').textContent = message;
             document.getElementById('error-message').style.display = 'block';
         }
+
+        function refreshCupData() {
+            const refreshBtn = document.getElementById('refresh-button');
+            const refreshIcon = refreshBtn.querySelector('.refresh-icon');
+
+            // Disable button and show loading state
+            refreshBtn.disabled = true;
+            refreshIcon.classList.add('spinning');
+
+            fetch(`/api/cup/${cupNumber}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    cupData = data;
+
+                    // Re-render cup data
+                    renderStandings(data.standings);
+                    renderSchedule(data.schedule, data.cup_info.current_week);
+
+                    // Show success toast
+                    showToast('Đã cập nhật dữ liệu', 'success');
+                })
+                .catch(error => {
+                    console.error('Error refreshing cup data:', error);
+                    showToast('Lỗi khi làm mới dữ liệu', 'error');
+                })
+                .finally(() => {
+                    // Re-enable button and stop spinning
+                    refreshBtn.disabled = false;
+                    refreshIcon.classList.remove('spinning');
+                });
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.className = `toast-notification toast-${type} toast-show`;
+
+            setTimeout(() => {
+                toast.classList.remove('toast-show');
+            }, 3000);
+        }
     </script>
-</body>
-</html>

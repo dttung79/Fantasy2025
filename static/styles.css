@@ -362,34 +362,167 @@ td:not(:first-child) {
 }
 
 .page-header {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
 }
 
 .page-title {
     color: var(--cream);
     font-size: 1.5rem;
     font-weight: 700;
-    margin: 0 0 1rem 0;
+    margin: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.toggle-btn {
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--light-green) 100%);
-    color: var(--white);
-    border: none;
-    padding: 0.75rem 1.5rem;
+/* Refresh Button */
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    color: var(--cream);
+    border: 2px solid var(--gold);
+    padding: 0.5rem;
     border-radius: 8px;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(30, 126, 52, 0.3);
     transition: all 0.3s ease;
-    min-height: 44px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.toggle-btn:hover {
+.refresh-btn .refresh-text {
+    display: none;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--burgundy) 0%, var(--deep-maroon) 100%);
+    border-color: var(--gold-dark);
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(30, 126, 52, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.refresh-icon {
+    font-size: 1.2rem;
+    display: inline-block;
+}
+
+.refresh-icon.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Toast Notifications */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.toast-notification.toast-show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-notification.toast-success {
+    background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+    color: white;
+    border: 2px solid #22c55e;
+}
+
+.toast-notification.toast-error {
+    background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+    color: white;
+    border: 2px solid #ef4444;
+}
+
+/* Info Tooltip */
+.info-tooltip {
+    display: inline-block;
+    margin-left: 0.3rem;
+    cursor: help;
+    font-size: 0.9rem;
+    color: var(--gold);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.info-tooltip:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+/* Skeleton Loaders */
+.skeleton {
+    background: linear-gradient(90deg,
+        var(--navy-light) 0%,
+        var(--navy-blue) 50%,
+        var(--navy-light) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.skeleton-table th,
+.skeleton-table td {
+    padding: 1rem;
+    background: var(--navy-blue);
+}
+
+.skeleton-table th {
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+}
+
+.skeleton-row {
+    height: 60px;
+}
+
+.skeleton-cell {
+    height: 20px;
+    margin: 0.5rem 0;
+}
+
+.skeleton-header {
+    height: 40px;
+    width: 60%;
+    margin: 1rem auto;
+}
+
+.skeleton-card {
+    height: 100px;
+    margin: 1rem 0;
+    border-radius: 8px;
 }
 
 .table-container {
@@ -606,7 +739,7 @@ th.col-team-name {
     
     .main-nav {
         flex-direction: row;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         gap: 2rem;
     }
@@ -694,12 +827,7 @@ th.col-team-name {
     .page-title {
         font-size: 1.3rem;
     }
-    
-    .toggle-btn {
-        padding: 0.6rem 1.2rem;
-        font-size: 0.9rem;
-    }
-    
+
     .col-team-name {
         width: 90px;
         min-width: 90px;
@@ -738,7 +866,40 @@ th.col-team-name {
     .arrow-icon {
         font-size: 0.9rem;
     }
+
+    /* Enhanced mobile table experience */
+    .table-wrapper {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    .nav-arrow {
+        -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3);
+    }
+
+    .refresh-btn {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .page-header {
+        gap: 0.5rem;
+    }
+
+    .week-range-small {
+        display: none;
+    }
+
+    .toast-notification {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        font-size: 0.85rem;
+        padding: 0.75rem 1rem;
+    }
 }
+
 /* Add this to your existing CSS file */
 .chart-container {
     width: 100%; /* Full width for mobile */
@@ -886,20 +1047,23 @@ header a::after {
 }
 
 .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
     margin-bottom: 1rem;
+    flex-wrap: wrap;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--gold);
 }
 
 .section-title {
     color: var(--cream);
     font-size: 1.5rem;
     font-weight: 700;
-    text-align: center;
     margin: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    padding: 0.5rem 0;
-    border-bottom: 3px solid var(--gold);
     display: inline-block;
-    width: 100%;
 }
 
 .week-range-badge {
@@ -1188,6 +1352,12 @@ td.current-week-column {
     border-right: 3px solid var(--gold) !important;
     position: relative;
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+th.current-week-column {
+    color: var(--navy-blue) !important;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--cream) 0%, var(--beige) 100%) !important;
 }
 
 
