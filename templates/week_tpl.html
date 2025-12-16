@@ -1,9 +1,21 @@
 <main class="weekly-main">
-  <div class="page-header">
-    <h2 class="page-title">Bảng Tuần Trực Tiếp</h2>
-    <button id="refresh-button" class="refresh-btn" onclick="refreshData()" aria-label="Làm mới dữ liệu">
-      <span class="refresh-icon">🔄</span>
-      <span class="refresh-text">Làm mới</span>
+  <div class="weekly-header">
+    <button id="left-arrow" class="nav-arrow nav-arrow-left" onclick="shiftLeft()" aria-label="Tuần trước">
+      <span class="arrow-icon">←</span>
+      <span class="arrow-text">Trước</span>
+    </button>
+
+    <div class="header-title-group">
+      <h2 class="page-title">Bảng Tuần Trực Tiếp</h2>
+      <button id="refresh-button" class="refresh-btn" onclick="refreshData()" aria-label="Làm mới dữ liệu">
+        <span class="refresh-icon">🔄</span>
+        <span class="refresh-text">Làm mới</span>
+      </button>
+    </div>
+
+    <button id="right-arrow" class="nav-arrow nav-arrow-right" onclick="shiftRight()" aria-label="Tuần sau">
+      <span class="arrow-text">Sau</span>
+      <span class="arrow-icon">→</span>
     </button>
   </div>
   <div id="toast-notification" class="toast-notification"></div>
@@ -69,23 +81,11 @@
   </div>
 
   <div class="table-container" id="table-content" style="display: none;">
-    <div class="table-controls">
-      <button id="left-arrow" class="nav-arrow nav-arrow-left" onclick="shiftLeft()" aria-label="Tuần trước">
-        <span class="arrow-icon">←</span>
-        <span class="arrow-text">Trước</span>
-      </button>
-
-      <div class="table-wrapper">
-        <table id="data-table" class="weekly-table">
-          <thead id="table-header"></thead>
-          <tbody id="data-body"></tbody>
-        </table>
-      </div>
-
-      <button id="right-arrow" class="nav-arrow nav-arrow-right" onclick="shiftRight()" aria-label="Tuần sau">
-        <span class="arrow-text">Sau</span>
-        <span class="arrow-icon">→</span>
-      </button>
+    <div class="table-wrapper">
+      <table id="data-table" class="weekly-table">
+        <thead id="table-header"></thead>
+        <tbody id="data-body"></tbody>
+      </table>
     </div>
   </div>
 </main>

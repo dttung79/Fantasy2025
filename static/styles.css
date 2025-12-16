@@ -361,6 +361,24 @@ td:not(:first-child) {
     margin: 0;
 }
 
+.weekly-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--gold);
+}
+
+.header-title-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex: 1;
+}
+
 .page-header {
     display: flex;
     align-items: center;
@@ -528,13 +546,6 @@ td:not(:first-child) {
 .table-container {
     width: 100%;
     overflow: hidden;
-}
-
-.table-controls {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    width: 100%;
 }
 
 .table-wrapper {
@@ -881,6 +892,15 @@ th.col-team-name {
         min-width: 44px;
         min-height: 44px;
         font-size: 1.2rem;
+    }
+
+    .weekly-header {
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .header-title-group {
+        gap: 0.5rem;
     }
 
     .page-header {
