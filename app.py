@@ -610,6 +610,104 @@ def prepare_cup_schedule(tournament_data, team_points, cup_weeks, current_week):
 def cronjob():
     return jsonify({"message": "Cronjob is running"})
 
+@app.route('/save', methods=['GET', 'POST'])
+@app.route('/api/save', methods=['GET', 'POST'])
+def save_week_data():
+    """
+    Save current week's points to weeks.csv.
+    Only saves if:
+    1. Current week deadline has passed
+    2. Data for current week hasn't been saved yet
+    """
+    try:
+        # Get current week info
+        current_week, deadline_passed = get_current_week_info()
+        
+        # Check if deadline has passed
+        if not deadline_passed:
+            return jsonify({
+                "success": False,
+                "message": f"Tuần {current_week} chưa bắt đầu (deadline chưa qua)",
+                "current_week": current_week
+            })
+        
+        # Check if data for current week is already saved
+        df = pd.read_csv('weeks.csv')
+        week_col = str(current_week)
+        
+        # Check if week column exists and has data
+        if week_col in df.columns:
+            # Check if any team has non-empty data for this week
+            has_data = df[week_col].notna() & (df[week_col] != '') & (df[week_col] != '0:0')
+            if has_data.any():
+                return jsonify({
+                    "success": False,
+                    "message": f"Tuần {current_week} đã được lưu trước đó",
+                    "current_week": current_week
+                })
+        
+        # Fetch live data
+        league_id = 1798895  # Default league
+        live_df = extract_league_data(league_id)
+        
+        if live_df is None or live_df.empty:
+            return jsonify({
+                "success": False,
+                "message": "Không thể lấy dữ liệu live",
+                "current_week": current_week
+            })
+        
+        # Create mapping of live data
+        live_data_map = {}
+        for _, row in live_df.iterrows():
+            team_name = row['team_name']
+            live_points = row['live_points'] if pd.notna(row['live_points']) else 0
+            hits = row['hits'] if pd.notna(row['hits']) else 0
+            live_data_map[team_name] = f"{int(live_points)}:{int(hits)}"
+        
+        # Ensure week column exists
+        if week_col not in df.columns:
+            df[week_col] = ''
+        
+        # Update data for each team
+        updated_teams = []
+        for idx, row in df.iterrows():
+            team_name = row['team']
+            
+            # Find matching team in live data (case-insensitive, flexible matching)
+            matched_live_data = None
+            matched_live_team = None
+            for live_team, live_value in live_data_map.items():
+                if team_name.lower() in live_team.lower() or live_team.lower() in team_name.lower():
+                    matched_live_data = live_value
+                    matched_live_team = live_team
+                    break
+            
+            if matched_live_data:
+                df.at[idx, week_col] = matched_live_data
+                updated_teams.append({
+                    "team": team_name,
+                    "matched_with": matched_live_team,
+                    "data": matched_live_data
+                })
+        
+        # Save to CSV
+        df.to_csv('weeks.csv', index=False)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Đã lưu dữ liệu tuần {current_week}",
+            "current_week": current_week,
+            "updated_teams": updated_teams,
+            "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Lỗi: {str(e)}"
+        }), 500
+
 ####### main function #######
 if __name__ == '__main__':
     app.run(debug = True, host='0.0.0.0', port=5001)

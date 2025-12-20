@@ -17,8 +17,15 @@ pip install -r requirements.txt
 python app.py
 # Server runs on http://0.0.0.0:5001
 
-# Run tests
+# Run all cup logic tests
 python test_cup_functions.py
+
+# Run actual cup data tests
+python test_actual_cup.py
+
+# Debug cup standings
+python debug_cup.py
+python debug_cup_fast.py
 ```
 
 ### Data Generation
@@ -26,8 +33,23 @@ python test_cup_functions.py
 # Generate tournament schedules (creates tournament_1.csv through tournament_5.csv)
 python gen_cup_schedule.py
 
-# Extract live FPL data for a league
+# Extract live FPL data for a league (interactive - prompts for league ID)
 python extract_live_new.py
+```
+
+### Accessing the Application
+```bash
+# Weekly view for league 1798895
+http://localhost:5001/week/1798895
+
+# Cup view for cup 1-5
+http://localhost:5001/cup/1
+http://localhost:5001/cup/2
+# etc.
+
+# API endpoints
+http://localhost:5001/api/week/1798895
+http://localhost:5001/api/cup/1
 ```
 
 ## Architecture
