@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy Premier League 2024 - 2025 - League {{ league_id }}</title>
-    <link rel="stylesheet" href='../static/styles.css'>
+    <link rel="stylesheet" href='../static/styles.css?v=5'>
 </head>
 
 <body>
@@ -37,6 +37,9 @@
                         5 <span class="week-range-small">(29-35)</span>
                     </a>
                 </div>
+            </div>
+            <div class="nav-section">
+                <a href="/h2h" class="nav-link h2h-link {% if current_page == 'h2h' %}active{% endif %}">H2H</a>
             </div>
         </nav>
     </header>

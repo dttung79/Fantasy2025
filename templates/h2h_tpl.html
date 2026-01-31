@@ -1,0 +1,244 @@
+<main class="h2h-main">
+  <div class="h2h-page-header">
+    <h2 class="page-title">Bảng Đối Đầu (H2H)</h2>
+    <button id="refresh-button" class="refresh-btn" onclick="refreshH2HData()" aria-label="Làm mới dữ liệu">
+      <span class="refresh-icon">🔄</span>
+      <span class="refresh-text">Làm mới</span>
+    </button>
+  </div>
+  <div id="toast-notification" class="toast-notification"></div>
+
+  <!-- H2H Info -->
+  <div class="h2h-info">
+    <p>Bảng thống kê điểm đối đầu (H2H) giữa các đội qua tất cả các cúp</p>
+    <p class="h2h-note">Điểm là điểm cup: Thắng = 3, Hòa = 1, Thua = 0</p>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" id="loading" style="display: block;">
+    <div class="skeleton skeleton-header"></div>
+    <table class="skeleton-table">
+      <thead>
+        <tr>
+          <th style="width: 15%;">Đội</th>
+          <th style="width: 10%;">Đội 1</th>
+          <th style="width: 10%;">Đội 2</th>
+          <th style="width: 10%;">Đội 3</th>
+          <th style="width: 10%;">Đội 4</th>
+          <th style="width: 10%;">Đội 5</th>
+          <th style="width: 10%;">Đội 6</th>
+          <th style="width: 10%;">Đội 7</th>
+          <th style="width: 10%;">Đội 8</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="skeleton-row">
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+          <td><div class="skeleton skeleton-cell"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- H2H Content -->
+  <div class="h2h-container" id="h2h-content" style="display: none;">
+    <div class="h2h-wrapper">
+      <div class="h2h-table-wrapper">
+        <table id="h2h-table" class="h2h-table">
+          <thead id="h2h-header"></thead>
+          <tbody id="h2h-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const h2hApiUrl = '/api/h2h';
+
+  // Load H2H data when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    loadH2HData();
+  });
+
+  function loadH2HData() {
+    fetch(h2hApiUrl)
+      .then(response => response.json())
+      .then(data => {
+        // Hide loading and show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('h2h-content').style.display = 'block';
+        
+        renderH2HTable(data.teams, data.h2h_matrix);
+      })
+      .catch(error => {
+        console.error('Error loading H2H data:', error);
+        document.getElementById('loading').style.display = 'none';
+        showToast('Lỗi tải dữ liệu H2H', 'error');
+      });
+  }
+
+  function renderH2HTable(teams, h2hMatrix) {
+    const thead = document.getElementById('h2h-header');
+    const tbody = document.getElementById('h2h-body');
+    
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+    
+    // Find min and max points (excluding diagonal)
+    let minPoints = Infinity;
+    let maxPoints = -Infinity;
+    teams.forEach(rowTeam => {
+      teams.forEach(colTeam => {
+        if (rowTeam !== colTeam) {
+          const points = h2hMatrix[rowTeam][colTeam] || 0;
+          minPoints = Math.min(minPoints, points);
+          maxPoints = Math.max(maxPoints, points);
+        }
+      });
+    });
+    
+    // Handle edge case where all points are the same
+    if (minPoints === maxPoints) {
+      maxPoints = minPoints + 1;
+    }
+    
+    // Create header row
+    const headerRow = document.createElement('tr');
+    const emptyTh = document.createElement('th');
+    emptyTh.className = 'h2h-corner-cell';
+    emptyTh.textContent = 'Đội';
+    headerRow.appendChild(emptyTh);
+    
+    teams.forEach(team => {
+      const th = document.createElement('th');
+      th.className = 'h2h-header-cell';
+      th.innerHTML = `<div class="h2h-header-text">${team}</div>`;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    
+    // Create data rows
+    teams.forEach(rowTeam => {
+      const tr = document.createElement('tr');
+      
+      // Row header (team name)
+      const rowHeaderTd = document.createElement('td');
+      rowHeaderTd.className = 'h2h-row-header';
+      rowHeaderTd.textContent = rowTeam;
+      tr.appendChild(rowHeaderTd);
+      
+      // Data cells
+      teams.forEach(colTeam => {
+        const td = document.createElement('td');
+        td.className = 'h2h-data-cell';
+        
+        if (rowTeam === colTeam) {
+          // Same team - diagonal
+          td.classList.add('h2h-diagonal');
+          td.textContent = '-';
+        } else {
+          // Different teams - show cup points
+          const points = h2hMatrix[rowTeam][colTeam] || 0;
+          td.textContent = points;
+          
+          // Calculate heatmap color dynamically
+          const color = getHeatmapColor(points, minPoints, maxPoints);
+          td.style.backgroundColor = color.bg;
+          td.style.color = color.text;
+        }
+        
+        tr.appendChild(td);
+      });
+      
+      tbody.appendChild(tr);
+    });
+  }
+  
+  // Calculate heatmap color based on value position between min and max
+  // Red (low/bad) -> Yellow (middle) -> Green (high/good)
+  function getHeatmapColor(value, min, max) {
+    // Normalize value to 0-1 range
+    const ratio = (value - min) / (max - min);
+    
+    let r, g, b;
+    
+    if (ratio < 0.5) {
+      // Red to Yellow (0 -> 0.5)
+      const t = ratio * 2; // 0 to 1
+      r = 220;
+      g = Math.round(60 + t * 160); // 60 to 220
+      b = Math.round(60 - t * 30);  // 60 to 30
+    } else {
+      // Yellow to Green (0.5 -> 1)
+      const t = (ratio - 0.5) * 2; // 0 to 1
+      r = Math.round(220 - t * 150); // 220 to 70
+      g = Math.round(220 - t * 40);  // 220 to 180
+      b = Math.round(30 + t * 70);   // 30 to 100
+    }
+    
+    // Determine text color based on background brightness
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const textColor = brightness > 150 ? '#333333' : '#FFFFFF';
+    
+    return {
+      bg: `rgb(${r}, ${g}, ${b})`,
+      text: textColor
+    };
+  }
+
+  function refreshH2HData() {
+    const refreshBtn = document.getElementById('refresh-button');
+    const refreshIcon = refreshBtn.querySelector('.refresh-icon');
+
+    // Disable button and show loading state
+    refreshBtn.disabled = true;
+    refreshIcon.classList.add('spinning');
+
+    fetch(h2hApiUrl)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        renderH2HTable(data.teams, data.h2h_matrix);
+        showToast('Đã cập nhật dữ liệu', 'success');
+      })
+      .catch(error => {
+        console.error('Error refreshing H2H data:', error);
+        showToast('Lỗi khi làm mới dữ liệu', 'error');
+      })
+      .finally(() => {
+        refreshBtn.disabled = false;
+        refreshIcon.classList.remove('spinning');
+      });
+  }
+
+  function showToast(message, type) {
+    const toast = document.getElementById('toast-notification');
+    toast.textContent = message;
+    toast.className = `toast-notification toast-${type} toast-show`;
+
+    setTimeout(() => {
+      toast.classList.remove('toast-show');
+    }, 3000);
+  }
+</script>

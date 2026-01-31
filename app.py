@@ -23,6 +23,10 @@ def week(league_id):
 def cup(cup_number):
     return build_cup_page('cup_tpl.html', cup_number)
 
+@app.route('/h2h')
+def h2h():
+    return build_h2h_page('h2h_tpl.html')
+
 @app.route('/api/week/<league_id>')
 def get_weeks_data(league_id):
     """
@@ -48,6 +52,30 @@ def get_weeks_data(league_id):
             "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
         }
 
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/h2h')
+def get_h2h_data():
+    """
+    Fetch head-to-head data for all teams across all cups.
+    Returns H2H matrix showing cup points earned against each opponent.
+    """
+    try:
+        # Get current week info
+        current_week, deadline_passed = get_current_week_info()
+        
+        # Calculate H2H matrix
+        h2h_matrix, teams = calculate_h2h_matrix(current_week, deadline_passed)
+        
+        response = {
+            "teams": teams,
+            "h2h_matrix": h2h_matrix,
+            "current_week": current_week,
+            "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
+        }
+        
         return jsonify(response)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -224,6 +252,12 @@ def build_league_page(filename, league_id):
 def build_cup_page(filename, cup_number):
     head = render_template('header_tpl.html', league_id=1798895, current_page='cup', cup_number=cup_number)
     content = render_template(filename, cup_number=cup_number)
+    footer = render_template('footer_tpl.html')
+    return head + '\n' + content + '\n' + footer
+
+def build_h2h_page(filename):
+    head = render_template('header_tpl.html', league_id=1798895, current_page='h2h')
+    content = render_template(filename)
     footer = render_template('footer_tpl.html')
     return head + '\n' + content + '\n' + footer
 
@@ -556,6 +590,89 @@ def calculate_cup_standings(tournament_data, team_points, cup_weeks, current_wee
         final_standings.extend(sorted_group)
     
     return final_standings
+
+def calculate_h2h_matrix(current_week, deadline_passed):
+    """
+    Calculate head-to-head cup points matrix for all teams across all cups.
+    Returns: (h2h_matrix, teams_list)
+    h2h_matrix[team_i][team_j] = total cup points team_i earned against team_j
+    """
+    try:
+        # Get list of teams from weeks.csv
+        df = pd.read_csv('weeks.csv')
+        teams = sorted(df['team'].tolist())
+        
+        # Initialize H2H matrix
+        h2h_matrix = {}
+        for team in teams:
+            h2h_matrix[team] = {}
+            for opponent in teams:
+                h2h_matrix[team][opponent] = 0
+        
+        # Calculate current cup
+        current_cup = (current_week - 1) // 7 + 1
+        
+        # Iterate through all cups from 1 to current_cup
+        for cup_number in range(1, current_cup + 1):
+            try:
+                # Get tournament data for this cup
+                tournament_data = get_tournament_data(cup_number)
+                if not tournament_data:
+                    continue
+                
+                # Get cup weeks
+                cup_weeks = get_cup_weeks(cup_number)
+                
+                # Get team points for this cup
+                team_points = get_team_points_for_cup(cup_weeks, current_week, deadline_passed)
+                
+                # Process each match in the tournament
+                for match in tournament_data:
+                    week = match['week']
+                    team1 = match['team1']
+                    team2 = match['team2']
+                    
+                    # Only count matches that have been played (week <= current_week)
+                    if week <= current_week:
+                        # Get fantasy points for both teams
+                        team1_points = 0
+                        team2_points = 0
+                        
+                        if team1 in team_points and week in team_points[team1]:
+                            team1_points = team_points[team1][week]
+                        if team2 in team_points and week in team_points[team2]:
+                            team2_points = team_points[team2][week]
+                        
+                        # Skip if no data (both teams have 0 points - match not played yet)
+                        if team1_points == 0 and team2_points == 0:
+                            continue
+                        
+                        # Calculate cup points based on match result
+                        # Cup rules: Win if difference >= 3, Draw if difference <= 2
+                        point_diff = team1_points - team2_points
+                        
+                        if point_diff >= 3:
+                            # Team1 wins (ahead by 3 or more)
+                            h2h_matrix[team1][team2] += 3
+                            h2h_matrix[team2][team1] += 0
+                        elif point_diff <= -3:
+                            # Team2 wins (ahead by 3 or more)
+                            h2h_matrix[team1][team2] += 0
+                            h2h_matrix[team2][team1] += 3
+                        else:
+                            # Draw (difference is -2, -1, 0, 1, or 2)
+                            h2h_matrix[team1][team2] += 1
+                            h2h_matrix[team2][team1] += 1
+            
+            except Exception as e:
+                print(f"Error processing cup {cup_number}: {e}")
+                continue
+        
+        return h2h_matrix, teams
+    
+    except Exception as e:
+        print(f"Error calculating H2H matrix: {e}")
+        return {}, []
 
 def prepare_cup_schedule(tournament_data, team_points, cup_weeks, current_week):
     """

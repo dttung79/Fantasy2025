@@ -350,6 +350,24 @@ td:not(:first-child) {
     font-size: 0.9rem;
 }
 
+.h2h-link {
+    background: linear-gradient(135deg, var(--burgundy) 0%, var(--deep-maroon) 100%);
+    border: 2px solid var(--gold);
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+}
+
+.h2h-link:hover {
+    background: linear-gradient(135deg, var(--maroon-light) 0%, var(--burgundy) 100%);
+    border-color: var(--gold-light);
+}
+
+.h2h-link.active {
+    background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold) 100%);
+    color: var(--navy-dark);
+    border-color: var(--gold);
+}
+
 /* ============ WEEKLY PAGE STYLES ============ */
 .weekly-main {
     padding: 1rem;
@@ -1012,6 +1030,315 @@ header a::after {
 .hits-highlight {
     color: var(--hits-color) !important;
     font-weight: bold !important;
+}
+
+/* ============ WEEK TABS & H2H STYLES ============ */
+.week-tabs-container {
+    margin-bottom: 1.5rem;
+}
+
+.week-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background-color: var(--navy-dark);
+    padding: 0.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.week-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    color: var(--cream);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.week-tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.week-tab.active {
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    border-color: var(--gold);
+    box-shadow: 0 4px 12px rgba(107, 30, 62, 0.4);
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+}
+
+/* H2H Page Main */
+.h2h-main {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    background-color: var(--white);
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+}
+
+.h2h-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--gold);
+}
+
+@media (min-width: 768px) {
+    .h2h-main {
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        margin: 1rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* H2H Container */
+.h2h-container {
+    padding: 1rem 0;
+}
+
+.h2h-wrapper {
+    width: 100%;
+}
+
+.h2h-info {
+    background: linear-gradient(135deg, var(--navy-blue) 0%, var(--navy-light) 100%);
+    color: var(--cream);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--gold);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.h2h-info p {
+    margin: 0.25rem 0;
+    font-size: 0.95rem;
+}
+
+.h2h-note {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--gold-light);
+    margin-top: 0.5rem !important;
+}
+
+/* H2H Table */
+.h2h-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--gold);
+}
+
+.h2h-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: var(--white);
+    font-size: 0.9rem;
+}
+
+.h2h-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+}
+
+.h2h-corner-cell {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    color: var(--gold);
+    font-weight: 700;
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 2px solid var(--gold);
+    border-right: 2px solid var(--gold);
+    min-width: 120px;
+    max-width: 120px;
+}
+
+.h2h-header-cell {
+    background: linear-gradient(135deg, var(--deep-maroon) 0%, var(--burgundy) 100%);
+    color: #FFFFFF;
+    font-weight: 600;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    border-bottom: 2px solid var(--gold);
+    min-width: 80px;
+    max-width: 120px;
+}
+
+.h2h-header-text {
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.h2h-row-header {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: linear-gradient(135deg, var(--navy-blue) 0%, var(--navy-light) 100%);
+    color: var(--cream);
+    font-weight: 600;
+    padding: 0.75rem;
+    text-align: left;
+    border-right: 2px solid var(--gold);
+    border-bottom: 1px solid var(--border-light);
+    min-width: 120px;
+    max-width: 120px;
+    font-size: 0.9rem;
+}
+
+.h2h-data-cell {
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.h2h-data-cell:hover {
+    background-color: rgba(255, 215, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.h2h-diagonal {
+    background-color: #E0E0E0 !important;
+    color: #9E9E9E;
+    font-style: italic;
+}
+
+/* H2H Heatmap Colors - Red (bad) to Green (good) */
+.h2h-heat-0 {
+    background-color: #B71C1C !important;  /* Dark Red - 0 points */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-1 {
+    background-color: #E53935 !important;  /* Red - 1 point */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-2 {
+    background-color: #EF5350 !important;  /* Light Red - 2 points */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-3 {
+    background-color: #FF8A65 !important;  /* Orange Red - 3 points */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-4 {
+    background-color: #FFB74D !important;  /* Orange - 4 points */
+    color: #333333 !important;
+}
+
+.h2h-heat-5 {
+    background-color: #FFD54F !important;  /* Yellow Orange - 5 points */
+    color: #333333 !important;
+}
+
+.h2h-heat-6 {
+    background-color: #FFF176 !important;  /* Yellow - 6 points */
+    color: #333333 !important;
+}
+
+.h2h-heat-7 {
+    background-color: #DCE775 !important;  /* Yellow Green - 7 points */
+    color: #333333 !important;
+}
+
+.h2h-heat-8 {
+    background-color: #AED581 !important;  /* Light Green - 8 points */
+    color: #333333 !important;
+}
+
+.h2h-heat-9 {
+    background-color: #81C784 !important;  /* Green - 9 points */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-10 {
+    background-color: #66BB6A !important;  /* Medium Green - 10 points */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-11 {
+    background-color: #4CAF50 !important;  /* Dark Green - 11 points */
+    color: #FFFFFF !important;
+}
+
+.h2h-heat-12plus {
+    background-color: #2E7D32 !important;  /* Darkest Green - 12+ points */
+    color: #FFFFFF !important;
+}
+
+/* Mobile responsive for H2H */
+@media (max-width: 768px) {
+    .week-tab {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .tab-text {
+        display: none;
+    }
+    
+    .tab-icon {
+        font-size: 1.5rem;
+    }
+    
+    .h2h-corner-cell,
+    .h2h-row-header {
+        min-width: 100px;
+        max-width: 100px;
+        font-size: 0.8rem;
+        padding: 0.5rem;
+    }
+    
+    .h2h-header-cell {
+        min-width: 60px;
+        max-width: 80px;
+    }
+    
+    .h2h-data-cell {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.85rem;
+    }
+    
+    .h2h-info {
+        padding: 0.75rem;
+    }
+    
+    .h2h-info p {
+        font-size: 0.85rem;
+    }
 }
 
 /* ============ CUP PAGE STYLES ============ */
