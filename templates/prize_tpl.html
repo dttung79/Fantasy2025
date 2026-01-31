@@ -1,0 +1,275 @@
+<div class="container">
+    <div class="prize-page-header">
+        <h2 class="prize-page-title">Cập nhật giá vàng theo tuần</h2>
+    </div>
+
+    <div class="chart-container" id="chartContainer" style="display: none;">
+        <canvas id="prizeChart"></canvas>
+    </div>
+
+    <div class="skeleton-loading" id="loading">
+        <div class="skeleton-chart-header"></div>
+        <div class="skeleton-chart-body">
+            <div class="skeleton-chart-line"></div>
+            <div class="skeleton-chart-line"></div>
+            <div class="skeleton-chart-line"></div>
+            <div class="skeleton-chart-line"></div>
+            <div class="skeleton-chart-line"></div>
+        </div>
+        <div class="skeleton-chart-legend">
+            <div class="skeleton-legend-item"></div>
+            <div class="skeleton-legend-item"></div>
+            <div class="skeleton-legend-item"></div>
+            <div class="skeleton-legend-item"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Fetch prize data and render chart
+    async function loadPrizeData() {
+        try {
+            const response = await fetch('/api/prize');
+            const data = await response.json();
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('chartContainer').style.display = 'block';
+            
+            renderPrizeChart(data);
+        } catch (error) {
+            console.error('Error loading prize data:', error);
+            document.getElementById('loading').innerHTML = '<div class="error-message"><p>Lỗi tải dữ liệu</p></div>';
+        }
+    }
+
+    function renderPrizeChart(data) {
+        const ctx = document.getElementById('prizeChart').getContext('2d');
+        
+        // Prepare datasets for each team
+        const datasets = [];
+        const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+            '#FF9F40', '#FF6384', '#C9CBCF'
+        ];
+        
+        let colorIndex = 0;
+        for (const team in data.team_prizes) {
+            const teamData = data.team_prizes[team];
+            const color = colors[colorIndex % colors.length];
+            
+            datasets.push({
+                label: team,
+                data: teamData,
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1
+            });
+            
+            colorIndex++;
+        }
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.weeks,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tiền thưởng tích lũy theo tuần',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += new Intl.NumberFormat('vi-VN').format(context.parsed.y) + 'đ';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Số tiền (VNĐ)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tuần'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Load data when page loads
+    loadPrizeData();
+</script>
+
+<style>
+    .prize-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid var(--gold);
+    }
+
+    .prize-page-title {
+        color: var(--cream);
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 500px;
+        margin: 0;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+
+    /* Skeleton Loading Styles */
+    .skeleton-loading {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .skeleton-chart-header {
+        height: 40px;
+        background: linear-gradient(90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s ease-in-out infinite;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .skeleton-chart-body {
+        height: 350px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        padding: 20px 0;
+        margin-bottom: 20px;
+    }
+
+    .skeleton-chart-line {
+        height: 8px;
+        background: linear-gradient(90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s ease-in-out infinite;
+        border-radius: 4px;
+        position: relative;
+    }
+
+    .skeleton-chart-line:nth-child(1) {
+        width: 85%;
+        margin-left: 10%;
+    }
+
+    .skeleton-chart-line:nth-child(2) {
+        width: 75%;
+        margin-left: 15%;
+    }
+
+    .skeleton-chart-line:nth-child(3) {
+        width: 90%;
+        margin-left: 5%;
+    }
+
+    .skeleton-chart-line:nth-child(4) {
+        width: 70%;
+        margin-left: 20%;
+    }
+
+    .skeleton-chart-line:nth-child(5) {
+        width: 80%;
+        margin-left: 12%;
+    }
+
+    .skeleton-chart-legend {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .skeleton-legend-item {
+        width: 100px;
+        height: 20px;
+        background: linear-gradient(90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s ease-in-out infinite;
+        border-radius: 4px;
+    }
+
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    @media (max-width: 768px) {
+        .prize-page-title {
+            font-size: 1.5rem;
+        }
+
+        .chart-container {
+            height: 400px;
+            padding: 15px;
+        }
+
+        .skeleton-chart-body {
+            height: 300px;
+        }
+
+        .skeleton-legend-item {
+            width: 80px;
+            height: 18px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .prize-page-title {
+            font-size: 1.3rem;
+        }
+    }
+</style>

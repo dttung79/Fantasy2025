@@ -27,6 +27,10 @@ def cup(cup_number):
 def h2h():
     return build_h2h_page('h2h_tpl.html')
 
+@app.route('/prize')
+def prize():
+    return build_prize_page('prize_tpl.html')
+
 @app.route('/api/week/<league_id>')
 def get_weeks_data(league_id):
     """
@@ -72,6 +76,34 @@ def get_h2h_data():
         response = {
             "teams": teams,
             "h2h_matrix": h2h_matrix,
+            "current_week": current_week,
+            "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
+        }
+        
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/prize')
+def get_prize_data():
+    """
+    Calculate prize money for each team by week.
+    Rules:
+    - Weekly winner (highest points): 50K
+    - Cup champion (1st place): 200K
+    - Cup runner-up (2nd place): 100K
+    Returns accumulated prize money by week for each team.
+    """
+    try:
+        # Get current week info
+        current_week, deadline_passed = get_current_week_info()
+        
+        # Calculate prize money
+        team_prizes, weeks = calculate_prize_money(current_week, deadline_passed)
+        
+        response = {
+            "team_prizes": team_prizes,
+            "weeks": weeks,
             "current_week": current_week,
             "last_updated": datetime.now(ZoneInfo('Asia/Bangkok')).isoformat()
         }
@@ -257,6 +289,12 @@ def build_cup_page(filename, cup_number):
 
 def build_h2h_page(filename):
     head = render_template('header_tpl.html', league_id=1798895, current_page='h2h')
+    content = render_template(filename)
+    footer = render_template('footer_tpl.html')
+    return head + '\n' + content + '\n' + footer
+
+def build_prize_page(filename):
+    head = render_template('header_tpl.html', league_id=1798895, current_page='prize')
     content = render_template(filename)
     footer = render_template('footer_tpl.html')
     return head + '\n' + content + '\n' + footer
@@ -672,6 +710,87 @@ def calculate_h2h_matrix(current_week, deadline_passed):
     
     except Exception as e:
         print(f"Error calculating H2H matrix: {e}")
+        return {}, []
+
+def calculate_prize_money(current_week, deadline_passed):
+    """
+    Calculate prize money for each team by week.
+    Rules:
+    - Weekly winner (highest points): 50K
+    - Cup champion (1st place at end of cup): 200K (weeks 7, 14, 21, 28, 35)
+    - Cup runner-up (2nd place at end of cup): 100K (weeks 7, 14, 21, 28, 35)
+    Returns: (team_prizes_dict, weeks_list)
+    """
+    try:
+        # Get list of teams from weeks.csv
+        df = pd.read_csv('weeks.csv')
+        teams = sorted(df['team'].tolist())
+        
+        # Initialize prize money tracking for each team
+        team_prizes = {}
+        for team in teams:
+            team_prizes[team] = []  # Will store accumulated prize per week
+        
+        team_accumulated = {}
+        for team in teams:
+            team_accumulated[team] = 0
+        
+        # Process each week from 1 to current_week
+        weeks_list = []
+        for week in range(1, current_week + 1):
+            weeks_list.append(f"Tuần {week}")
+            
+            # Get weekly winner (highest points in that week)
+            week_col = str(week)
+            if week_col in df.columns:
+                weekly_points = {}
+                for _, row in df.iterrows():
+                    team_name = row['team']
+                    value = row[week_col]
+                    
+                    if pd.notna(value) and value != '' and value != '0:0':
+                        # Parse "points:hits" format
+                        parts = str(value).split(':')
+                        points = int(parts[0]) if parts[0].isdigit() else 0
+                        weekly_points[team_name] = points
+                
+                # Find team with max points
+                if weekly_points:
+                    weekly_winner = max(weekly_points, key=weekly_points.get)
+                    team_accumulated[weekly_winner] += 50000  # 50K for weekly winner
+            
+            # Check if this week is end of a cup (weeks 7, 14, 21, 28, 35)
+            if week % 7 == 0:
+                cup_number = week // 7
+                
+                # Get cup standings at this week
+                try:
+                    tournament_data = get_tournament_data(cup_number)
+                    cup_weeks = get_cup_weeks(cup_number)
+                    team_points = get_team_points_for_cup(cup_weeks, week, True)  # Assume deadline passed for historical cups
+                    
+                    # Calculate final standings for this cup
+                    standings = calculate_cup_standings(tournament_data, team_points, cup_weeks, week + 1)
+                    
+                    if len(standings) >= 1:
+                        champion = standings[0]['team_name']
+                        team_accumulated[champion] += 200000  # 200K for champion
+                    
+                    if len(standings) >= 2:
+                        runner_up = standings[1]['team_name']
+                        team_accumulated[runner_up] += 100000  # 100K for runner-up
+                
+                except Exception as e:
+                    print(f"Error calculating cup {cup_number} prizes: {e}")
+            
+            # Record accumulated prize for this week for all teams
+            for team in teams:
+                team_prizes[team].append(team_accumulated[team])
+        
+        return team_prizes, weeks_list
+    
+    except Exception as e:
+        print(f"Error calculating prize money: {e}")
         return {}, []
 
 def prepare_cup_schedule(tournament_data, team_points, cup_weeks, current_week):
