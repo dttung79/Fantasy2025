@@ -726,6 +726,22 @@ def calculate_prize_money(current_week, deadline_passed):
         df = pd.read_csv('weeks.csv')
         teams = sorted(df['team'].tolist())
         
+        # Get live data if current week deadline has passed
+        live_data_map = {}
+        if deadline_passed:
+            try:
+                live_df = extract_league_data(1798895)
+                for _, row in live_df.iterrows():
+                    live_team = row['team_name']
+                    live_points = row['live_points'] if pd.notna(row['live_points']) else 0
+                    # Match team names
+                    for team in teams:
+                        if team.lower() in live_team.lower() or live_team.lower() in team.lower():
+                            live_data_map[team] = int(live_points)
+                            break
+            except Exception as e:
+                print(f"Error getting live data for prize calculation: {e}")
+        
         # Initialize prize money tracking for each team
         team_prizes = {}
         for team in teams:
@@ -742,8 +758,13 @@ def calculate_prize_money(current_week, deadline_passed):
             
             # Get weekly winner (highest points in that week)
             week_col = str(week)
-            if week_col in df.columns:
-                weekly_points = {}
+            weekly_points = {}
+            
+            # For current week with deadline passed, use live data
+            if week == current_week and deadline_passed and live_data_map:
+                weekly_points = live_data_map.copy()
+            # Otherwise, read from CSV
+            elif week_col in df.columns:
                 for _, row in df.iterrows():
                     team_name = row['team']
                     value = row[week_col]
@@ -753,11 +774,11 @@ def calculate_prize_money(current_week, deadline_passed):
                         parts = str(value).split(':')
                         points = int(parts[0]) if parts[0].isdigit() else 0
                         weekly_points[team_name] = points
-                
-                # Find team with max points
-                if weekly_points:
-                    weekly_winner = max(weekly_points, key=weekly_points.get)
-                    team_accumulated[weekly_winner] += 50000  # 50K for weekly winner
+            
+            # Find team with max points
+            if weekly_points:
+                weekly_winner = max(weekly_points, key=weekly_points.get)
+                team_accumulated[weekly_winner] += 50000  # 50K for weekly winner
             
             # Check if this week is end of a cup (weeks 7, 14, 21, 28, 35)
             if week % 7 == 0:
