@@ -788,7 +788,11 @@ def calculate_prize_money(current_week, deadline_passed):
                 try:
                     tournament_data = get_tournament_data(cup_number)
                     cup_weeks = get_cup_weeks(cup_number)
-                    team_points = get_team_points_for_cup(cup_weeks, week, True)  # Assume deadline passed for historical cups
+                    # Pass the actual current_week so that get_team_points_for_cup only fetches
+                    # live data when the current week is actually within this cup's range.
+                    # For completed cups (e.g. cup 1 weeks 1-7 when current_week=26),
+                    # current_week is NOT in cup_weeks so no live data is incorrectly fetched.
+                    team_points = get_team_points_for_cup(cup_weeks, current_week, deadline_passed)
                     
                     # Calculate final standings for this cup
                     standings = calculate_cup_standings(tournament_data, team_points, cup_weeks, week + 1)
