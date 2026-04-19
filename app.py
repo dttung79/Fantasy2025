@@ -474,7 +474,7 @@ def apply_tiebreaker_rules(teams_with_same_points, tournament_data, team_points,
     Apply tiebreaker rules for teams with same cup points:
     1. Head-to-head result
     2. If head-to-head is draw, compare points in that week  
-    3. If still tied, compare total transfers (hits) - ai mua ít hơn xếp trên
+    3. If still tied, compare hits in the H2H week - ai mua ít hơn xếp trên
     4. Fallback to goal difference
     """
     if len(teams_with_same_points) <= 1:
@@ -499,14 +499,14 @@ def apply_tiebreaker_rules(teams_with_same_points, tournament_data, team_points,
             elif team2_h2h_points > team1_h2h_points:
                 return [team2, team1]
             else:
-                # Nếu vẫn bằng điểm đối đầu, so sánh total hits
+                # Nếu vẫn bằng điểm đối đầu, so sánh hits trong tuần đối đầu
                 # Ai mua ít hơn (hits nhỏ hơn) xếp trên
-                team1_total_hits = get_team_total_hits_from_csv(team1['team_name'], current_week)
-                team2_total_hits = get_team_total_hits_from_csv(team2['team_name'], current_week)
+                team1_h2h_hits = get_team_hits_for_week(team1['team_name'], h2h_week)
+                team2_h2h_hits = get_team_hits_for_week(team2['team_name'], h2h_week)
                 
-                if team1_total_hits < team2_total_hits:
+                if team1_h2h_hits < team2_h2h_hits:
                     return [team1, team2]  # Team1 mua ít hơn -> xếp trên
-                elif team2_total_hits < team1_total_hits:
+                elif team2_h2h_hits < team1_h2h_hits:
                     return [team2, team1]  # Team2 mua ít hơn -> xếp trên
                 else:
                     # Nếu hits cũng bằng nhau, fallback về goal difference
@@ -515,12 +515,32 @@ def apply_tiebreaker_rules(teams_with_same_points, tournament_data, team_points,
                     else:
                         return [team2, team1]
     
-    # Nếu có nhiều hơn 2 đội, sắp xếp theo hits rồi goal difference
-    def sort_key(team):
-        total_hits = get_team_total_hits_from_csv(team['team_name'], current_week)
-        return (-total_hits, team['goal_difference'])  # Âm hits để sort tăng dần hits (ít hơn trước)
-    
-    return sorted(teams_with_same_points, key=sort_key, reverse=True)
+    # Nếu có nhiều hơn 2 đội, sắp xếp theo goal difference
+    return sorted(teams_with_same_points, key=lambda t: t['goal_difference'], reverse=True)
+
+def get_team_hits_for_week(team_name, week):
+    """
+    Get hits for a team in a specific week from weeks.csv.
+    """
+    try:
+        import pandas as pd
+        df = pd.read_csv('weeks.csv')
+        
+        if team_name not in df['team'].values:
+            return 0
+            
+        team_row = df[df['team'] == team_name].iloc[0]
+        week_col = str(week)
+        if week_col in df.columns:
+            value = team_row[week_col]
+            if pd.notna(value) and ':' in str(value):
+                parts = str(value).split(':')
+                if len(parts) == 2 and parts[1].isdigit():
+                    return int(parts[1])
+        return 0
+    except Exception as e:
+        print(f"Error getting hits for {team_name} week {week}: {e}")
+        return 0
 
 def get_team_total_hits_from_csv(team_name, current_week):
     """
