@@ -27,6 +27,25 @@ def cup(cup_number):
 def h2h():
     return build_h2h_page('h2h_tpl.html')
 
+@app.route('/final_cup')
+def final_cup():
+    return build_final_cup_page('final_cup_tpl.html')
+
+def build_final_cup_page(filename):
+    head = render_template('header_tpl.html', league_id=1798895, current_page='final_cup')
+    content = render_template(filename)
+    footer = render_template('footer_tpl.html')
+    return head + '\n' + content + '\n' + footer
+
+@app.route('/api/final_cup')
+def get_final_cup_data():
+    try:
+        current_week, deadline_passed = get_current_week_info()
+        response = build_final_cup_response(current_week, deadline_passed)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/prize')
 def prize():
     return build_prize_page('prize_tpl.html')
@@ -885,6 +904,338 @@ def prepare_cup_schedule(tournament_data, team_points, cup_weeks, current_week):
         }
     
     return schedule
+
+# ============================================================
+# FINAL CUP FUNCTIONS
+# ============================================================
+
+def get_final_cup_state(current_week, deadline_passed):
+    """
+    Determine the display state of the Final Cup based on current week and deadline.
+    Returns one of: PRE_QF, LIVE_QF, OFFICIAL_QF, LIVE_SF, OFFICIAL_SF, LIVE_FINAL, POST_FINAL
+    """
+    if current_week < 36 or (current_week == 36 and not deadline_passed):
+        return "PRE_QF"
+    elif current_week == 36 and deadline_passed:
+        return "LIVE_QF"
+    elif current_week == 37 and not deadline_passed:
+        return "OFFICIAL_QF"
+    elif current_week == 37 and deadline_passed:
+        return "LIVE_SF"
+    elif current_week == 38 and not deadline_passed:
+        return "OFFICIAL_SF"
+    elif current_week == 38 and deadline_passed:
+        return "LIVE_FINAL"
+    else:  # current_week > 38
+        return "POST_FINAL"
+
+
+def read_quarter_final_bracket():
+    """
+    Read quarter.csv and return list of 4 QF pairs.
+    Returns: [{'pair': 1, 'team1': ..., 'team2': ...}, ...]
+    """
+    bracket = []
+    try:
+        with open('quarter.csv', 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for i, row in enumerate(reader, 1):
+                bracket.append({
+                    'pair': i,
+                    'team1': row['Team1'],
+                    'team2': row['Team2']
+                })
+    except Exception as e:
+        print(f"Error reading quarter.csv: {e}")
+    return bracket
+
+
+def calculate_final_cup_match_result(team1_name, team2_name,
+                                     team1_pts, team2_pts,
+                                     team1_hits, team2_hits,
+                                     team1_total, team2_total):
+    """
+    Final Cup tiebreaker rules (different from regular cups):
+    1. Higher points wins (even by 1)
+    2. Tie on points -> fewer hits wins
+    3. Tie on hits -> higher total FPL points wins
+    4. Tie on all -> alphabet order
+    Returns: (result_code, winner_name, tiebreaker_used)
+    result_code: 'win_team1' | 'win_team2'
+    tiebreaker_used: None | 'hits' | 'total_points' | 'alphabet'
+    """
+    if team1_pts > team2_pts:
+        return "win_team1", team1_name, None
+    elif team2_pts > team1_pts:
+        return "win_team2", team2_name, None
+    # Equal points -> compare hits (fewer = better)
+    elif team1_hits < team2_hits:
+        return "win_team1", team1_name, "hits"
+    elif team2_hits < team1_hits:
+        return "win_team2", team2_name, "hits"
+    # Equal hits -> compare accumulated total FPL points
+    elif team1_total > team2_total:
+        return "win_team1", team1_name, "total_points"
+    elif team2_total > team1_total:
+        return "win_team2", team2_name, "total_points"
+    # Everything equal -> alphabet
+    elif team1_name.lower() <= team2_name.lower():
+        return "win_team1", team1_name, "alphabet"
+    else:
+        return "win_team2", team2_name, "alphabet"
+
+
+def get_week_data_from_csv(week):
+    """
+    Read a specific week's points and hits from weeks.csv.
+    Returns: {team_name: {'points': int, 'hits': int}}
+    """
+    result = {}
+    try:
+        df = pd.read_csv('weeks.csv')
+        week_col = str(week)
+        for _, row in df.iterrows():
+            team = row['team']
+            pts, hits = 0, 0
+            if week_col in df.columns:
+                value = row[week_col]
+                if pd.notna(value) and ':' in str(value):
+                    parts = str(value).split(':')
+                    pts = int(parts[0]) if parts[0].isdigit() else 0
+                    hits = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+            result[team] = {'points': pts, 'hits': hits}
+    except Exception as e:
+        print(f"Error reading week {week} data from CSV: {e}")
+    return result
+
+
+def get_accumulated_total_from_csv(team_name, up_to_week):
+    """
+    Calculate total FPL points for a team from week 1 to up_to_week (inclusive).
+    Used as tiebreaker for Final Cup.
+    """
+    try:
+        df = pd.read_csv('weeks.csv')
+        if team_name not in df['team'].values:
+            return 0
+        team_row = df[df['team'] == team_name].iloc[0]
+        total = 0
+        for week in range(1, up_to_week + 1):
+            week_col = str(week)
+            if week_col in df.columns:
+                value = team_row[week_col]
+                if pd.notna(value) and str(value) != '':
+                    parts = str(value).split(':')
+                    pts = int(parts[0]) if parts[0].isdigit() else 0
+                    total += pts
+        return total
+    except Exception as e:
+        print(f"Error calculating total for {team_name}: {e}")
+        return 0
+
+
+def _get_final_cup_live_map():
+    """
+    Fetch live data and return a map of {team_name_csv: {points, hits, total}}.
+    Uses fuzzy matching to align live team names with weeks.csv team names.
+    """
+    live_map = {}
+    try:
+        live_df = extract_league_data(1798895)
+        df = pd.read_csv('weeks.csv')
+        teams_csv = df['team'].tolist()
+        for _, row in live_df.iterrows():
+            live_team = row['team_name']
+            live_pts = int(row['live_points']) if pd.notna(row['live_points']) else 0
+            live_hits = int(row['hits']) if pd.notna(row['hits']) else 0
+            live_total = int(row['total_points']) if pd.notna(row.get('total_points', None)) else 0
+            for team in teams_csv:
+                if team.lower() in live_team.lower() or live_team.lower() in team.lower():
+                    live_map[team] = {'points': live_pts, 'hits': live_hits, 'total': live_total}
+                    break
+    except Exception as e:
+        print(f"Error fetching live data for final cup: {e}")
+    return live_map
+
+
+def _build_match_pending(team1, team2, week, extra=None):
+    base = {
+        'week': week,
+        'team1': team1 or 'TBD',
+        'team2': team2 or 'TBD',
+        'team1_points': None, 'team2_points': None,
+        'team1_hits': None, 'team2_hits': None,
+        'team1_total': None, 'team2_total': None,
+        'result': 'pending', 'winner': None,
+        'is_live': False, 'tiebreaker_used': None
+    }
+    if extra:
+        base.update(extra)
+    return base
+
+
+def _build_match_from_data(team1, team2, week, t1_pts, t2_pts, t1_hits, t2_hits,
+                            t1_total, t2_total, is_live=False):
+    result_code, winner, tb = calculate_final_cup_match_result(
+        team1, team2, t1_pts, t2_pts, t1_hits, t2_hits, t1_total, t2_total
+    )
+    return {
+        'week': week,
+        'team1': team1, 'team2': team2,
+        'team1_points': t1_pts, 'team2_points': t2_pts,
+        'team1_hits': t1_hits, 'team2_hits': t2_hits,
+        'team1_total': t1_total, 'team2_total': t2_total,
+        'result': result_code, 'winner': winner,
+        'is_live': is_live, 'tiebreaker_used': tb
+    }
+
+
+def build_final_cup_response(current_week, deadline_passed):
+    """
+    Build the full JSON response for /api/final_cup based on current state.
+    """
+    state = get_final_cup_state(current_week, deadline_passed)
+    bracket = read_quarter_final_bracket()
+
+    # Determine which rounds need live data
+    needs_live = state in ("LIVE_QF", "LIVE_SF", "LIVE_FINAL")
+    live_map = _get_final_cup_live_map() if needs_live else {}
+
+    # Pre-load CSV data for rounds that are officially done
+    qf_csv = get_week_data_from_csv(36) if state not in ("PRE_QF", "LIVE_QF") else {}
+    sf_csv = get_week_data_from_csv(37) if state in ("OFFICIAL_SF", "LIVE_FINAL", "POST_FINAL") else {}
+    final_csv = get_week_data_from_csv(38) if state == "POST_FINAL" else {}
+
+    # ---- Quarter Finals ----
+    quarter_finals = []
+    for pair in bracket:
+        t1, t2 = pair['team1'], pair['team2']
+        base = {'pair': pair['pair'], 'team1_from': None, 'team2_from': None}
+
+        if state == "PRE_QF":
+            m = _build_match_pending(t1, t2, 36, base)
+        elif state == "LIVE_QF":
+            t1d, t2d = live_map.get(t1, {}), live_map.get(t2, {})
+            m = _build_match_from_data(
+                t1, t2, 36,
+                t1d.get('points', 0), t2d.get('points', 0),
+                t1d.get('hits', 0), t2d.get('hits', 0),
+                t1d.get('total', 0), t2d.get('total', 0),
+                is_live=True
+            )
+        else:  # official QF result from CSV
+            t1d, t2d = qf_csv.get(t1, {}), qf_csv.get(t2, {})
+            t1_total = get_accumulated_total_from_csv(t1, 36)
+            t2_total = get_accumulated_total_from_csv(t2, 36)
+            m = _build_match_from_data(
+                t1, t2, 36,
+                t1d.get('points', 0), t2d.get('points', 0),
+                t1d.get('hits', 0), t2d.get('hits', 0),
+                t1_total, t2_total,
+                is_live=False
+            )
+        m.update(base)
+        quarter_finals.append(m)
+
+    def get_winner(match):
+        if match['result'] == 'win_team1':
+            return match['team1']
+        elif match['result'] == 'win_team2':
+            return match['team2']
+        return None
+
+    qf_winners = [get_winner(m) for m in quarter_finals]
+
+    # ---- Semi Finals ----
+    # BK1: winner pair1 vs winner pair2
+    # BK2: winner pair3 vs winner pair4
+    sf_config = [
+        {'match': 1, 'week': 37, 'idx1': 0, 'idx2': 1,
+         'team1_from': 'winner_qf_pair_1', 'team2_from': 'winner_qf_pair_2'},
+        {'match': 2, 'week': 37, 'idx1': 2, 'idx2': 3,
+         'team1_from': 'winner_qf_pair_3', 'team2_from': 'winner_qf_pair_4'},
+    ]
+
+    semi_finals = []
+    for sc in sf_config:
+        t1 = qf_winners[sc['idx1']]
+        t2 = qf_winners[sc['idx2']]
+        base = {'match': sc['match'], 'team1_from': sc['team1_from'], 'team2_from': sc['team2_from']}
+
+        if state in ("PRE_QF", "LIVE_QF") or t1 is None or t2 is None:
+            m = _build_match_pending(t1, t2, 37, base)
+        elif state == "OFFICIAL_QF":
+            # Teams known but not played yet
+            m = _build_match_pending(t1, t2, 37, base)
+        elif state == "LIVE_SF":
+            t1d, t2d = live_map.get(t1, {}), live_map.get(t2, {})
+            m = _build_match_from_data(
+                t1, t2, 37,
+                t1d.get('points', 0), t2d.get('points', 0),
+                t1d.get('hits', 0), t2d.get('hits', 0),
+                t1d.get('total', 0), t2d.get('total', 0),
+                is_live=True
+            )
+        else:  # OFFICIAL_SF, LIVE_FINAL, POST_FINAL
+            t1d, t2d = sf_csv.get(t1, {}), sf_csv.get(t2, {})
+            t1_total = get_accumulated_total_from_csv(t1, 37)
+            t2_total = get_accumulated_total_from_csv(t2, 37)
+            m = _build_match_from_data(
+                t1, t2, 37,
+                t1d.get('points', 0), t2d.get('points', 0),
+                t1d.get('hits', 0), t2d.get('hits', 0),
+                t1_total, t2_total,
+                is_live=False
+            )
+        m.update(base)
+        semi_finals.append(m)
+
+    sf_winners = [get_winner(m) for m in semi_finals]
+
+    # ---- Final ----
+    t1 = sf_winners[0]
+    t2 = sf_winners[1]
+    base_final = {'team1_from': 'winner_sf_1', 'team2_from': 'winner_sf_2'}
+
+    if state in ("PRE_QF", "LIVE_QF", "OFFICIAL_QF") or (t1 is None and t2 is None):
+        final_match = _build_match_pending(t1, t2, 38, base_final)
+    elif state in ("LIVE_SF", "OFFICIAL_SF"):
+        # Teams may be known (from live/official SF), but not played yet
+        final_match = _build_match_pending(t1, t2, 38, base_final)
+    elif state == "LIVE_FINAL":
+        t1d = live_map.get(t1, {}) if t1 else {}
+        t2d = live_map.get(t2, {}) if t2 else {}
+        final_match = _build_match_from_data(
+            t1 or 'TBD', t2 or 'TBD', 38,
+            t1d.get('points', 0), t2d.get('points', 0),
+            t1d.get('hits', 0), t2d.get('hits', 0),
+            t1d.get('total', 0), t2d.get('total', 0),
+            is_live=True
+        )
+    else:  # POST_FINAL
+        t1d = final_csv.get(t1, {}) if t1 else {}
+        t2d = final_csv.get(t2, {}) if t2 else {}
+        t1_total = get_accumulated_total_from_csv(t1, 38) if t1 else 0
+        t2_total = get_accumulated_total_from_csv(t2, 38) if t2 else 0
+        final_match = _build_match_from_data(
+            t1 or 'TBD', t2 or 'TBD', 38,
+            t1d.get('points', 0), t2d.get('points', 0),
+            t1d.get('hits', 0), t2d.get('hits', 0),
+            t1_total, t2_total,
+            is_live=False
+        )
+    final_match.update(base_final)
+
+    return {
+        'state': state,
+        'current_week': current_week,
+        'deadline_passed': deadline_passed,
+        'last_updated': datetime.now(ZoneInfo('Asia/Bangkok')).isoformat(),
+        'quarter_finals': quarter_finals,
+        'semi_finals': semi_finals,
+        'final': final_match
+    }
+
 
 # cronjob to keep the server running
 @app.route('/cronjob', methods=['GET'])

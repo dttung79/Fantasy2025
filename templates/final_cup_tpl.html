@@ -1,0 +1,294 @@
+    <div class="final-cup-container">
+
+        <!-- Loading state -->
+        <div class="loading-state" id="loading">
+            <div class="skeleton skeleton-header"></div>
+            <div class="skeleton skeleton-card" style="height: 200px;"></div>
+            <div class="skeleton skeleton-card" style="height: 200px;"></div>
+            <div class="skeleton skeleton-card" style="height: 200px;"></div>
+        </div>
+
+        <div id="error-message" class="error-message" style="display: none;"></div>
+
+        <div id="final-cup-content" style="display: none;">
+
+            <!-- Tournament Header -->
+            <div class="tournament-header">
+                <h2 class="tournament-title">🏆 Final Cup 2025-2026</h2>
+                <div class="tournament-subtitle">Vòng 36 · 37 · 38</div>
+                <div style="display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 8px;">
+                    <span id="state-badge" class="state-badge"></span>
+                    <button id="refresh-button" class="refresh-btn" onclick="refreshFinalCupData()" aria-label="Làm mới dữ liệu">
+                        <span class="refresh-icon">🔄</span>
+                        <span class="refresh-text">Làm mới</span>
+                    </button>
+                </div>
+                <div id="toast-notification" class="toast-notification"></div>
+            </div>
+
+            <!-- Bracket Layout -->
+            <div class="bracket-layout">
+
+                <!-- Quarter Finals -->
+                <section class="round-section qf-section">
+                    <div class="round-header">
+                        <h3 class="round-title">Tứ Kết</h3>
+                        <span class="round-week-badge">Vòng 36</span>
+                        <span id="qf-status-badge" class="round-status-badge"></span>
+                    </div>
+                    <div id="qf-matches" class="round-matches"></div>
+                </section>
+
+                <div class="bracket-arrow" aria-hidden="true">›</div>
+
+                <!-- Semi Finals -->
+                <section class="round-section sf-section">
+                    <div class="round-header">
+                        <h3 class="round-title">Bán Kết</h3>
+                        <span class="round-week-badge">Vòng 37</span>
+                        <span id="sf-status-badge" class="round-status-badge"></span>
+                    </div>
+                    <div id="sf-matches" class="round-matches"></div>
+                </section>
+
+                <div class="bracket-arrow" aria-hidden="true">›</div>
+
+                <!-- Final -->
+                <section class="round-section final-section">
+                    <div class="round-header">
+                        <h3 class="round-title">⚽ Chung Kết</h3>
+                        <span class="round-week-badge">Vòng 38</span>
+                        <span id="final-status-badge" class="round-status-badge"></span>
+                    </div>
+                    <div id="final-match" class="round-matches"></div>
+                </section>
+
+            </div>
+
+            <!-- Champion Banner -->
+            <div id="champion-banner" class="champion-banner" style="display: none;">
+                <div class="champion-trophy">🏆</div>
+                <div class="champion-label">Vô Địch Final Cup 2025-2026</div>
+                <div class="champion-name" id="champion-name"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let finalCupData = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadFinalCupData();
+        });
+
+        async function loadFinalCupData() {
+            try {
+                const response = await fetch('/api/final_cup');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                finalCupData = data;
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('final-cup-content').style.display = 'block';
+
+                renderAll(data);
+            } catch (error) {
+                console.error('Error loading final cup data:', error);
+                document.getElementById('loading').style.display = 'none';
+                const errEl = document.getElementById('error-message');
+                errEl.textContent = 'Không thể tải dữ liệu Final Cup. Vui lòng thử lại sau.';
+                errEl.style.display = 'block';
+            }
+        }
+
+        // Mapping from team1_from/team2_from keys to human-readable labels
+        const FROM_LABELS = {
+            'winner_qf_pair_1': 'Thắng cặp 1',
+            'winner_qf_pair_2': 'Thắng cặp 2',
+            'winner_qf_pair_3': 'Thắng cặp 3',
+            'winner_qf_pair_4': 'Thắng cặp 4',
+            'winner_sf_1': 'Thắng BK1',
+            'winner_sf_2': 'Thắng BK2',
+        };
+
+        function resolveTeamName(match, side) {
+            // Returns actual team name if known, otherwise the placeholder label
+            const name = match[side];  // e.g. match.team1
+            if (name && name !== 'TBD') return name;
+            const fromKey = match[side + '_from'];  // e.g. match.team1_from
+            return FROM_LABELS[fromKey] || 'TBD';
+        }
+
+        function renderAll(data) {
+            const isLive = data.state === 'LIVE_QF' || data.state === 'LIVE_SF' || data.state === 'LIVE_FINAL';
+            document.getElementById('refresh-button').style.display = isLive ? 'flex' : 'none';
+
+            renderStateBadge(data.state);
+            renderRoundStatusBadges(data.state);
+            renderQF(data.quarter_finals, data.state);
+            renderSF(data.semi_finals, data.state);
+            renderFinal(data.final, data.state);
+            renderChampionBanner(data.final, data.state);
+        }
+
+        // ---- State Badge ----
+        const STATE_LABELS = {
+            'PRE_QF':      { text: 'Chưa bắt đầu',          cls: 'badge-pending' },
+            'LIVE_QF':     { text: '🔴 Tứ Kết · LIVE',       cls: 'badge-live' },
+            'OFFICIAL_QF': { text: '✅ Tứ Kết hoàn thành',   cls: 'badge-done' },
+            'LIVE_SF':     { text: '🔴 Bán Kết · LIVE',      cls: 'badge-live' },
+            'OFFICIAL_SF': { text: '✅ Bán Kết hoàn thành',  cls: 'badge-done' },
+            'LIVE_FINAL':  { text: '🔴 Chung Kết · LIVE',    cls: 'badge-live' },
+            'POST_FINAL':  { text: '🏆 Giải đấu kết thúc',   cls: 'badge-champion' },
+        };
+
+        function renderStateBadge(state) {
+            const el = document.getElementById('state-badge');
+            const info = STATE_LABELS[state] || { text: state, cls: 'badge-pending' };
+            el.textContent = info.text;
+            el.className = `state-badge ${info.cls}`;
+        }
+
+        function renderRoundStatusBadges(state) {
+            const qfDone = ['OFFICIAL_QF', 'LIVE_SF', 'OFFICIAL_SF', 'LIVE_FINAL', 'POST_FINAL'].includes(state);
+            const qfLive = state === 'LIVE_QF';
+            const sfDone = ['OFFICIAL_SF', 'LIVE_FINAL', 'POST_FINAL'].includes(state);
+            const sfLive = state === 'LIVE_SF';
+            const finalDone = state === 'POST_FINAL';
+            const finalLive = state === 'LIVE_FINAL';
+
+            setRoundBadge('qf-status-badge', qfLive, qfDone);
+            setRoundBadge('sf-status-badge', sfLive, sfDone);
+            setRoundBadge('final-status-badge', finalLive, finalDone);
+        }
+
+        function setRoundBadge(id, isLive, isDone) {
+            const el = document.getElementById(id);
+            if (isLive) {
+                el.textContent = 'LIVE';
+                el.className = 'round-status-badge badge-live';
+            } else if (isDone) {
+                el.textContent = 'Hoàn thành';
+                el.className = 'round-status-badge badge-done';
+            } else {
+                el.textContent = '';
+                el.className = 'round-status-badge';
+            }
+        }
+
+        // ---- Quarter Finals ----
+        function renderQF(qfList, state) {
+            const container = document.getElementById('qf-matches');
+            container.innerHTML = qfList.map(m => renderMatchCard(m, m.is_live)).join('');
+        }
+
+        // ---- Semi Finals ----
+        function renderSF(sfList, state) {
+            const container = document.getElementById('sf-matches');
+            container.innerHTML = sfList.map(m => renderMatchCard(m, m.is_live)).join('');
+        }
+
+        // ---- Final ----
+        function renderFinal(finalMatch, state) {
+            const container = document.getElementById('final-match');
+            container.innerHTML = renderMatchCard(finalMatch, finalMatch.is_live);
+        }
+
+        // ---- Match Card ----
+        function renderMatchCard(match, isLive) {
+            const isPending = match.result === 'pending';
+            const team1Wins = match.result === 'win_team1';
+            const team2Wins = match.result === 'win_team2';
+
+            const team1Display = resolveTeamName(match, 'team1');
+            const team2Display = resolveTeamName(match, 'team2');
+            const isPlaceholder1 = !match.team1 || match.team1 === 'TBD';
+            const isPlaceholder2 = !match.team2 || match.team2 === 'TBD';
+
+            const team1Class = team1Wins ? 'team-win' : (team2Wins ? 'team-loss' : (isPlaceholder1 ? 'team-placeholder' : ''));
+            const team2Class = team2Wins ? 'team-win' : (team1Wins ? 'team-loss' : (isPlaceholder2 ? 'team-placeholder' : ''));
+
+            const scoreHtml = isPending
+                ? `<span class="match-vs">vs</span>`
+                : `<span class="match-score-text ${team1Wins ? 'score-left-bold' : ''}">${match.team1_points}</span>
+                   <span class="match-score-dash">-</span>
+                   <span class="match-score-text ${team2Wins ? 'score-right-bold' : ''}">${match.team2_points}</span>`;
+
+            const liveHtml = isLive ? `<span class="live-indicator">LIVE</span>` : '';
+
+            const tiebreakerHtml = (!isPending && match.tiebreaker_used)
+                ? renderTiebreaker(match)
+                : '';
+
+            const winnerHtml = (!isPending)
+                ? `<div class="match-winner-label">🏅 Thắng: <strong>${match.winner}</strong></div>`
+                : '';
+
+            return `
+                <div class="match-card ${isLive ? 'match-live' : ''} ${isPending ? 'match-pending' : 'match-done'}">
+                    <div class="match-teams-row">
+                        <div class="match-team match-team-left ${team1Class}">
+                            <span class="match-team-name">${team1Display}</span>
+                        </div>
+                        <div class="match-center">
+                            ${liveHtml}
+                            <div class="match-score-row">${scoreHtml}</div>
+                        </div>
+                        <div class="match-team match-team-right ${team2Class}">
+                            <span class="match-team-name">${team2Display}</span>
+                        </div>
+                    </div>
+                    ${tiebreakerHtml}
+                    ${winnerHtml}
+                </div>`;
+        }
+
+        function renderTiebreaker(match) {
+            const labels = {
+                'hits': `Phân định qua Hits (${match.team1_hits} vs ${match.team2_hits})`,
+                'total_points': `Phân định qua Điểm Tổng (${match.team1_total} vs ${match.team2_total})`,
+                'alphabet': 'Phân định theo Alphabet'
+            };
+            return `<div class="tiebreaker-info">⚖️ ${labels[match.tiebreaker_used] || ''}</div>`;
+        }
+
+        // ---- Champion Banner ----
+        function renderChampionBanner(finalMatch, state) {
+            const banner = document.getElementById('champion-banner');
+            if (state === 'POST_FINAL' && finalMatch.winner) {
+                document.getElementById('champion-name').textContent = finalMatch.winner;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        // ---- Refresh ----
+        function refreshFinalCupData() {
+            const btn = document.getElementById('refresh-button');
+            const icon = btn.querySelector('.refresh-icon');
+            btn.disabled = true;
+            icon.classList.add('spinning');
+
+            fetch('/api/final_cup')
+                .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
+                .then(data => {
+                    finalCupData = data;
+                    renderAll(data);
+                    showToast('Đã cập nhật dữ liệu', 'success');
+                })
+                .catch(() => showToast('Lỗi khi làm mới dữ liệu', 'error'))
+                .finally(() => {
+                    btn.disabled = false;
+                    icon.classList.remove('spinning');
+                });
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.className = `toast-notification toast-${type} toast-visible`;
+            setTimeout(() => { toast.className = 'toast-notification'; }, 3000);
+        }
+    </script>
