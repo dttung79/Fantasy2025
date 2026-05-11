@@ -121,15 +121,16 @@
         }
 
         function renderAll(data) {
-            const isLive = data.state === 'LIVE_QF' || data.state === 'LIVE_SF' || data.state === 'LIVE_FINAL';
-            document.getElementById('refresh-button').style.display = isLive ? 'flex' : 'none';
+            // Refresh button visible only when at least one round still has players yet to play
+            const isAnyLive = data.qf_any_yet || data.sf_any_yet || data.final_any_yet;
+            document.getElementById('refresh-button').style.display = isAnyLive ? 'flex' : 'none';
 
-            renderStateBadge(data.state);
-            renderRoundStatusBadges(data.state);
+            renderStateBadge(data);
+            renderRoundStatusBadges(data);
             renderQF(data.quarter_finals, data.state);
             renderSF(data.semi_finals, data.state);
             renderFinal(data.final, data.state);
-            renderChampionBanner(data.final, data.state);
+            renderChampionBanner(data.final, data);
         }
 
         // ---- State Badge ----
@@ -143,24 +144,36 @@
             'POST_FINAL':  { text: '🏆 Giải đấu kết thúc',   cls: 'badge-champion' },
         };
 
-        function renderStateBadge(state) {
+        function renderStateBadge(data) {
             const el = document.getElementById('state-badge');
-            const info = STATE_LABELS[state] || { text: state, cls: 'badge-pending' };
+            // Determine effective state: if LIVE_* but yet=0 for that round, show as completed
+            let key = data.state;
+            if (data.state === 'LIVE_QF' && !data.qf_any_yet) key = 'OFFICIAL_QF';
+            else if (data.state === 'LIVE_SF' && !data.sf_any_yet) key = 'OFFICIAL_SF';
+            else if (data.state === 'LIVE_FINAL' && !data.final_any_yet) key = 'FINAL_DONE';
+            const STATE_LABELS_EXT = Object.assign({}, STATE_LABELS, {
+                'FINAL_DONE': { text: '✅ Chung Kết hoàn thành', cls: 'badge-done' }
+            });
+            const info = STATE_LABELS_EXT[key] || { text: data.state, cls: 'badge-pending' };
             el.textContent = info.text;
             el.className = `state-badge ${info.cls}`;
         }
 
-        function renderRoundStatusBadges(state) {
+        function renderRoundStatusBadges(data) {
+            const state = data.state;
             const qfDone = ['OFFICIAL_QF', 'LIVE_SF', 'OFFICIAL_SF', 'LIVE_FINAL', 'POST_FINAL'].includes(state);
-            const qfLive = state === 'LIVE_QF';
+            const qfLive = state === 'LIVE_QF' && data.qf_any_yet;
+            const qfFinished = state === 'LIVE_QF' && !data.qf_any_yet;
             const sfDone = ['OFFICIAL_SF', 'LIVE_FINAL', 'POST_FINAL'].includes(state);
-            const sfLive = state === 'LIVE_SF';
+            const sfLive = state === 'LIVE_SF' && data.sf_any_yet;
+            const sfFinished = state === 'LIVE_SF' && !data.sf_any_yet;
             const finalDone = state === 'POST_FINAL';
-            const finalLive = state === 'LIVE_FINAL';
+            const finalLive = state === 'LIVE_FINAL' && data.final_any_yet;
+            const finalFinished = state === 'LIVE_FINAL' && !data.final_any_yet;
 
-            setRoundBadge('qf-status-badge', qfLive, qfDone);
-            setRoundBadge('sf-status-badge', sfLive, sfDone);
-            setRoundBadge('final-status-badge', finalLive, finalDone);
+            setRoundBadge('qf-status-badge', qfLive, qfDone || qfFinished);
+            setRoundBadge('sf-status-badge', sfLive, sfDone || sfFinished);
+            setRoundBadge('final-status-badge', finalLive, finalDone || finalFinished);
         }
 
         function setRoundBadge(id, isLive, isDone) {
@@ -217,6 +230,11 @@
 
             const liveHtml = isLive ? `<span class="live-indicator">LIVE</span>` : '';
 
+            // Show Yet counts when live data is available (team1_yet is not null)
+            const showYet = match.team1_yet !== null && match.team1_yet !== undefined;
+            const yet1Html = showYet ? `<span class="yet-count">${match.team1_yet} yet</span>` : '';
+            const yet2Html = showYet ? `<span class="yet-count">${match.team2_yet} yet</span>` : '';
+
             const tiebreakerHtml = (!isPending && match.tiebreaker_used)
                 ? renderTiebreaker(match)
                 : '';
@@ -230,6 +248,7 @@
                     <div class="match-teams-row">
                         <div class="match-team match-team-left ${team1Class}">
                             <span class="match-team-name">${team1Display}</span>
+                            ${yet1Html}
                         </div>
                         <div class="match-center">
                             ${liveHtml}
@@ -237,6 +256,7 @@
                         </div>
                         <div class="match-team match-team-right ${team2Class}">
                             <span class="match-team-name">${team2Display}</span>
+                            ${yet2Html}
                         </div>
                     </div>
                     ${tiebreakerHtml}
@@ -254,9 +274,12 @@
         }
 
         // ---- Champion Banner ----
-        function renderChampionBanner(finalMatch, state) {
+        function renderChampionBanner(finalMatch, data) {
             const banner = document.getElementById('champion-banner');
-            if (state === 'POST_FINAL' && finalMatch.winner) {
+            // Show champion when officially done OR when live final has yet=0 (all played)
+            const showChampion = (data.state === 'POST_FINAL' ||
+                (data.state === 'LIVE_FINAL' && !data.final_any_yet)) && finalMatch.winner;
+            if (showChampion) {
                 document.getElementById('champion-name').textContent = finalMatch.winner;
                 banner.style.display = 'block';
             } else {

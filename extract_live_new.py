@@ -322,35 +322,71 @@ def _extract_team_name(text):
 
 def _parse_table_format(soup):
     """
-    Parse the new table format with proper GW and Total columns
-    Looking for structure like:
-    | Pos | Manager | Yet | (C) | GW | Total |
+    Parse the new table format with proper GW and Total columns.
+    First tries <details class="row"> data attributes (most reliable, includes Yet).
+    Falls back to text-based parsing for older page structures.
     """
     rows = []
-    
-    # Look for table structure or organized data
-    # Try to find elements that contain both GW points and Total points
+
+    # Method 1: Use data attributes from <details class="row"> elements
+    # Structure: <details class="row" data-gw="..." data-hit="..." data-total="..." data-played_rem="..." ...>
+    detail_rows = soup.find_all('details', class_='row')
+    if detail_rows:
+        for detail in detail_rows:
+            try:
+                # Extract team name from the team-name div inside the entry link
+                team_link = detail.find('a', href=lambda x: x and '/entry/' in x)
+                if not team_link:
+                    continue
+
+                team_name_div = team_link.find(class_='team-name')
+                team_name = team_name_div.get_text(strip=True) if team_name_div else team_link.get_text(strip=True)
+
+                if not team_name:
+                    continue
+
+                # Extract values from data attributes (most reliable)
+                # data-gw = net points (after hit deduction), data-gwgross = gross points (before hits)
+                gw = int(detail.get('data-gwgross', detail.get('data-gw', 0)) or 0)
+                hit = int(detail.get('data-hit', 0) or 0)
+                total = int(detail.get('data-total', 0) or 0)
+                yet = int(detail.get('data-played_rem', 0) or 0)
+
+                if total > 0:
+                    rows.append({
+                        "rank": len(rows) + 1,
+                        "team_name": team_name,
+                        "total_points": total,
+                        "live_points": gw,
+                        "hits": hit,
+                        "yet": yet
+                    })
+            except Exception as e:
+                print(f"Error parsing detail row: {e}")
+                continue
+
+        if rows:
+            return rows
+
+    # Fallback: text-based parsing (yet defaults to 0 since it cannot be extracted reliably)
     potential_rows = soup.find_all(['tr', 'div'], class_=lambda x: x and ('row' in str(x).lower() or 'item' in str(x).lower()))
-    
+
     for i, element in enumerate(potential_rows):
         text = element.get_text(" ", strip=True)
-        
+
         # Check if this element contains manager/team data
         if _is_team_row(text):
             # Extract team name using generic pattern detection
             team_name = _extract_team_name(text)
-            
+
             # Look for hit pattern first: "X (-Y)=Z" or "X (-Y)=Z (-Y)"
             hits_match = re.search(r'(\d+)\s*\(-(\d+)\)\s*=\s*-?\d+(?:\s*\(-\d+\))?', text)
-            
+
             if hits_match:
                 live_points = int(hits_match.group(1))  # GW points before hits
                 hits = int(hits_match.group(2))         # Hit penalty
-                
+
                 # Extract total points - should be the last reasonable number
-                all_numbers = [int(x) for x in re_all_ints.findall(text)]
-                # The total is typically at the end, after the hit calculation
-                # Look for numbers after the hit pattern that are reasonable totals
                 remaining_text = text[hits_match.end():]
                 remaining_numbers = [int(x) for x in re_all_ints.findall(remaining_text)]
                 total_candidates = [n for n in remaining_numbers if 50 <= n <= 3000]
@@ -359,12 +395,9 @@ def _parse_table_format(soup):
                 # No hits - look for separate GW and Total values
                 all_numbers = [int(x) for x in re_all_ints.findall(text)]
                 if len(all_numbers) >= 2:
-                    # Based on the debug output pattern: [pos, ..., rank_parts, gw, total]
-                    # Total is typically the last number in reasonable range
                     total_candidates = [n for n in all_numbers if 50 <= n <= 3000]
                     if total_candidates:
-                        total_points = total_candidates[-1]  # Last reasonable total
-                        # GW should be second to last reasonable number or before total
+                        total_points = total_candidates[-1]
                         gw_candidates = [n for n in all_numbers if 0 <= n <= 150 and n != total_points]
                         live_points = gw_candidates[-1] if gw_candidates else 0
                     else:
@@ -372,16 +405,17 @@ def _parse_table_format(soup):
                     hits = 0
                 else:
                     continue  # Skip if not enough data
-            
+
             if live_points > 0 or total_points > 0:
                 rows.append({
                     "rank": len(rows) + 1,
                     "team_name": team_name,
                     "total_points": total_points,
                     "live_points": live_points,
-                    "hits": hits
+                    "hits": hits,
+                    "yet": 0  # Cannot reliably extract from text parsing
                 })
-    
+
     return rows
 
 # Example usage:

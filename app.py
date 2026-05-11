@@ -1036,7 +1036,7 @@ def get_accumulated_total_from_csv(team_name, up_to_week):
 
 def _get_final_cup_live_map():
     """
-    Fetch live data and return a map of {team_name_csv: {points, hits, total}}.
+    Fetch live data and return a map of {team_name_csv: {points, hits, total, yet}}.
     Uses fuzzy matching to align live team names with weeks.csv team names.
     """
     live_map = {}
@@ -1049,9 +1049,10 @@ def _get_final_cup_live_map():
             live_pts = int(row['live_points']) if pd.notna(row['live_points']) else 0
             live_hits = int(row['hits']) if pd.notna(row['hits']) else 0
             live_total = int(row['total_points']) if pd.notna(row.get('total_points', None)) else 0
+            live_yet = int(row['yet']) if 'yet' in row.index and pd.notna(row['yet']) else 0
             for team in teams_csv:
                 if team.lower() in live_team.lower() or live_team.lower() in team.lower():
-                    live_map[team] = {'points': live_pts, 'hits': live_hits, 'total': live_total}
+                    live_map[team] = {'points': live_pts, 'hits': live_hits, 'total': live_total, 'yet': live_yet}
                     break
     except Exception as e:
         print(f"Error fetching live data for final cup: {e}")
@@ -1066,6 +1067,7 @@ def _build_match_pending(team1, team2, week, extra=None):
         'team1_points': None, 'team2_points': None,
         'team1_hits': None, 'team2_hits': None,
         'team1_total': None, 'team2_total': None,
+        'team1_yet': None, 'team2_yet': None,
         'result': 'pending', 'winner': None,
         'is_live': False, 'tiebreaker_used': None
     }
@@ -1075,18 +1077,21 @@ def _build_match_pending(team1, team2, week, extra=None):
 
 
 def _build_match_from_data(team1, team2, week, t1_pts, t2_pts, t1_hits, t2_hits,
-                            t1_total, t2_total, is_live=False):
+                            t1_total, t2_total, is_live=False, t1_yet=0, t2_yet=0):
     result_code, winner, tb = calculate_final_cup_match_result(
         team1, team2, t1_pts, t2_pts, t1_hits, t2_hits, t1_total, t2_total
     )
+    # If both teams have no players left to play, the match has effectively ended
+    match_is_live = is_live and (t1_yet > 0 or t2_yet > 0)
     return {
         'week': week,
         'team1': team1, 'team2': team2,
         'team1_points': t1_pts, 'team2_points': t2_pts,
         'team1_hits': t1_hits, 'team2_hits': t2_hits,
         'team1_total': t1_total, 'team2_total': t2_total,
+        'team1_yet': t1_yet, 'team2_yet': t2_yet,
         'result': result_code, 'winner': winner,
-        'is_live': is_live, 'tiebreaker_used': tb
+        'is_live': match_is_live, 'tiebreaker_used': tb
     }
 
 
@@ -1121,7 +1126,8 @@ def build_final_cup_response(current_week, deadline_passed):
                 t1d.get('points', 0), t2d.get('points', 0),
                 t1d.get('hits', 0), t2d.get('hits', 0),
                 t1d.get('total', 0), t2d.get('total', 0),
-                is_live=True
+                is_live=True,
+                t1_yet=t1d.get('yet', 0), t2_yet=t2d.get('yet', 0)
             )
         else:  # official QF result from CSV
             t1d, t2d = qf_csv.get(t1, {}), qf_csv.get(t2, {})
@@ -1174,7 +1180,8 @@ def build_final_cup_response(current_week, deadline_passed):
                 t1d.get('points', 0), t2d.get('points', 0),
                 t1d.get('hits', 0), t2d.get('hits', 0),
                 t1d.get('total', 0), t2d.get('total', 0),
-                is_live=True
+                is_live=True,
+                t1_yet=t1d.get('yet', 0), t2_yet=t2d.get('yet', 0)
             )
         else:  # OFFICIAL_SF, LIVE_FINAL, POST_FINAL
             t1d, t2d = sf_csv.get(t1, {}), sf_csv.get(t2, {})
@@ -1210,7 +1217,8 @@ def build_final_cup_response(current_week, deadline_passed):
             t1d.get('points', 0), t2d.get('points', 0),
             t1d.get('hits', 0), t2d.get('hits', 0),
             t1d.get('total', 0), t2d.get('total', 0),
-            is_live=True
+            is_live=True,
+            t1_yet=t1d.get('yet', 0), t2_yet=t2d.get('yet', 0)
         )
     else:  # POST_FINAL
         t1d = final_csv.get(t1, {}) if t1 else {}
@@ -1226,8 +1234,24 @@ def build_final_cup_response(current_week, deadline_passed):
         )
     final_match.update(base_final)
 
+    # Compute whether any team still has players yet to play in each live round
+    qf_any_yet = state == "LIVE_QF" and any(
+        (m.get('team1_yet') or 0) > 0 or (m.get('team2_yet') or 0) > 0
+        for m in quarter_finals
+    )
+    sf_any_yet = state == "LIVE_SF" and any(
+        (m.get('team1_yet') or 0) > 0 or (m.get('team2_yet') or 0) > 0
+        for m in semi_finals
+    )
+    final_any_yet = state == "LIVE_FINAL" and (
+        (final_match.get('team1_yet') or 0) > 0 or (final_match.get('team2_yet') or 0) > 0
+    )
+
     return {
         'state': state,
+        'qf_any_yet': qf_any_yet,
+        'sf_any_yet': sf_any_yet,
+        'final_any_yet': final_any_yet,
         'current_week': current_week,
         'deadline_passed': deadline_passed,
         'last_updated': datetime.now(ZoneInfo('Asia/Bangkok')).isoformat(),
